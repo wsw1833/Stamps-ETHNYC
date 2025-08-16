@@ -80,7 +80,7 @@ const PaymentStamp = ({
   const ipfsHandler = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     window.open(
-      `https://turquoise-perfect-caterpillar-941.mypinata.cloud/ipfs/${ipfs}?pinataGatewayToken=Sh9J-JiQbZWerOkhChHyHCny459cNTsXwdWwYZ5XHcMfcRsguwUzGehzZ1tvZCPa`,
+      `https://turquoise-perfect-caterpillar-941.mypinata.cloud/ipfs/${ipfs}?pinataGatewayToken=LUn5zAAf4XotCnPa9SYODfOE3FjQHCpKZepMBWvA3AP87X18diYdPbyoeFgXtV50`,
       '_blank'
     );
   };

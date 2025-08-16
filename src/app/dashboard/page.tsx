@@ -7,13 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Drawer,
+  DrawerContent,
+  DrawerClose,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import { Search, Scan, History, Ticket, NfcIcon } from 'lucide-react';
-import { NFCScan } from '@/components/nfc-scan';
 import globe from '@/images/globe.svg';
 import Image from 'next/image';
 import VoucherStamp from '@/components/voucherStamp';
@@ -25,6 +28,8 @@ import { useAccount } from 'wagmi';
 import { pinata } from '../config/pinata';
 import { useStampNFT } from '@/hooks/useStampNFT';
 import { contractAddress } from '@/lib/constant';
+import Lottie from 'lottie-react';
+import nfcScanAnimation from '@/images/mobileNfc.json';
 
 interface NfcData {
   [key: string]: string | undefined;
@@ -42,6 +47,8 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [nfcSupported, setNfcSupported] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [scanMode, setScanMode] = useState<'mint' | 'pay' | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
   const [activeTab, setActiveTab] = useState('active');
   const { user } = useDynamicContext();
   const router = useRouter();
@@ -72,13 +79,14 @@ export default function DashboardPage() {
   const handleScanMint = async () => {
     if (!nfcSupported || !address) {
       toast.error('Web NFC API is not supported in this browser.');
+
       return;
     }
 
     if (!address) return;
 
     try {
-      setShowScanner(true);
+      setIsScanning(true);
       toast.info('Scanning NFC Tag...');
 
       const ndef = new (window as any).NDEFReader();
@@ -100,14 +108,18 @@ export default function DashboardPage() {
         if (!nfcData.ipfs) {
           toast.error('Invalid NFC data');
           setShowScanner(false);
+          setIsScanning(false);
           return;
         }
 
         let metadata: any;
 
-        const file = await pinata.gateways.public.get(nfcData.ipfs);
-        if (file.data) {
-          metadata = file.data;
+        const { data, contentType } = await pinata.gateways.public.get(
+          nfcData.ipfs
+        );
+        console.log(data);
+        if (data) {
+          metadata = data;
           console.log(metadata);
           toast.success(`NFC Data Read Successfully`);
         }
@@ -132,17 +144,22 @@ export default function DashboardPage() {
         console.log('Received stamp data:', formData);
 
         const result = await mintStamp(formData);
+
         if (result.success) {
           setShowScanner(false);
+          setIsScanning(false);
           toast.success('NFT Minted Successfully!');
+          ndef.removeEventListener('reading');
           refetch();
         } else {
+          setIsScanning(false);
           toast.error(`Failed to mint: ${result.error || result.message}`);
           console.error('Mint failed:', result);
         }
       });
     } catch (err) {
       toast('NFT Minting Failed!');
+      setIsScanning(false);
     }
   };
 
@@ -155,7 +172,7 @@ export default function DashboardPage() {
     if (!address) return;
 
     try {
-      setShowScanner(true);
+      setIsScanning(true);
       toast.info('Scanning NFC Tag...');
 
       const ndef = new (window as any).NDEFReader();
@@ -177,17 +194,38 @@ export default function DashboardPage() {
         if (!nfcData.storeName || !nfcData.address) {
           toast.error('Invalid NFC data');
           setShowScanner(false);
+          setIsScanning(false);
           return;
         }
 
         setShowScanner(false);
+        setIsScanning(false);
         router.push(
           `/payment?storeName=${nfcData.storeName}&storeAddress=${nfcData.address}`
         );
+        ndef.removeEventListener('reading');
       });
     } catch (err) {
       toast('NFT Minting Failed!');
+      setIsScanning(false);
     }
+  };
+
+  const handleOpenScanner = (mode: 'mint' | 'pay') => {
+    setScanMode(mode);
+    setShowScanner(true);
+    // Auto-start scanning when drawer opens
+    if (mode === 'mint') {
+      handleScanMint();
+    } else if (mode === 'pay') {
+      handleNFCScan();
+    }
+  };
+
+  const handleCloseScanner = () => {
+    setShowScanner(false);
+    setScanMode(null);
+    setIsScanning(false);
   };
 
   if (isLoading) return <p>Loading...</p>;
@@ -231,23 +269,139 @@ export default function DashboardPage() {
           {/* Action Buttons */}
           <div className="mb-8">
             <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 max-w-lg mx-auto">
-              <Button
-                variant="outline"
-                className="flex flex-col items-center h-fit p-4 border-slate-300 text-slate-700 hover:bg-slate-50 transition-all duration-200 "
-                onClick={() => handleScanMint()}
+              <Drawer
+                open={showScanner && scanMode === 'mint'}
+                onOpenChange={(open) => {
+                  if (!open) handleCloseScanner();
+                }}
               >
-                <NfcIcon className="h-6 w-6 mb-2" />
-                <span className="text-sm font-medium">Mint Voucher</span>
-              </Button>
+                <DrawerTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex flex-col items-center h-fit p-4 border-slate-300 text-slate-700 hover:bg-slate-50 transition-all duration-200"
+                    onClick={() => handleOpenScanner('mint')}
+                    disabled={isScanning}
+                  >
+                    <NfcIcon className="h-6 w-6 mb-2" />
+                    <span className="text-sm font-medium">Mint Voucher</span>
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="max-h-[90vh] mx-auto w-full max-w-md">
+                  <div className="mx-auto w-full p-6">
+                    <DrawerHeader className="text-center pb-4">
+                      <DrawerTitle className="text-2xl md:text-3xl font-bold text-slate-900">
+                        Ready to Mint
+                      </DrawerTitle>
+                      <DrawerDescription className="text-slate-600 mt-2">
+                        Scan an NFC tag to mint your stamp
+                      </DrawerDescription>
+                    </DrawerHeader>
 
-              <Button
-                variant="outline"
-                className="flex flex-col items-center h-fit p-4 bg-black/90 hover:bg-black hover:text-white transition-all duration-200 text-white"
-                onClick={() => handleNFCScan()}
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <div className="w-48 h-48 md:w-60 md:h-60 flex items-center justify-center mb-6 bg-slate-50 rounded-full">
+                        <Lottie
+                          animationData={nfcScanAnimation}
+                          loop={true}
+                          autoplay={true}
+                          style={{ width: '80%', height: '80%' }}
+                        />
+                      </div>
+
+                      <div className="text-center space-y-2">
+                        {isScanning && (
+                          <div className="flex items-center justify-center gap-2 text-blue-600">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            <span className="text-sm font-medium">
+                              Scanning...
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <DrawerFooter className="px-0 pt-4">
+                      <div className="flex justify-center w-full">
+                        <DrawerClose asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full max-w-xs h-12 text-base font-medium"
+                            onClick={handleCloseScanner}
+                          >
+                            Cancel
+                          </Button>
+                        </DrawerClose>
+                      </div>
+                    </DrawerFooter>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+
+              <Drawer
+                open={showScanner && scanMode === 'pay'}
+                onOpenChange={(open) => {
+                  if (!open) handleCloseScanner();
+                }}
               >
-                <Scan className="h-8 w-8 mb-2" />
-                <span className="text-sm font-medium">Scan to Pay</span>
-              </Button>
+                <DrawerTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex flex-col items-center h-fit p-4 bg-black/90 hover:bg-black hover:text-white transition-all duration-200 text-white"
+                    onClick={() => handleOpenScanner('pay')}
+                    disabled={isScanning}
+                  >
+                    <Scan className="h-8 w-8 mb-2" />
+                    <span className="text-sm font-medium">Scan to Pay</span>
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="max-h-[90vh] mx-auto w-full max-w-md">
+                  <div className="mx-auto w-full p-6">
+                    <DrawerHeader className="text-center pb-4">
+                      <DrawerTitle className="text-2xl md:text-3xl font-bold text-slate-900">
+                        Ready to Pay
+                      </DrawerTitle>
+                      <DrawerDescription className="text-slate-600 mt-2">
+                        Scan the store's NFC tag to proceed with payment
+                      </DrawerDescription>
+                    </DrawerHeader>
+
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <div className="w-48 h-48 md:w-60 md:h-60 flex items-center justify-center mb-6 bg-slate-50 rounded-full">
+                        <Lottie
+                          animationData={nfcScanAnimation}
+                          loop={true}
+                          autoplay={true}
+                          style={{ width: '80%', height: '80%' }}
+                        />
+                      </div>
+
+                      <div className="text-center space-y-2">
+                        {isScanning && (
+                          <div className="flex items-center justify-center gap-2 text-blue-600">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            <span className="text-sm font-medium">
+                              Scanning...
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <DrawerFooter className="px-0 pt-4">
+                      <div className="flex justify-center w-full">
+                        <DrawerClose asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full max-w-xs h-12 text-base font-medium"
+                            onClick={handleCloseScanner}
+                          >
+                            Cancel
+                          </Button>
+                        </DrawerClose>
+                      </div>
+                    </DrawerFooter>
+                  </div>
+                </DrawerContent>
+              </Drawer>
             </div>
           </div>
 
@@ -334,21 +488,6 @@ export default function DashboardPage() {
           </Tabs>
         </div>
       </div>
-
-      {/*NFC Scanner Modal */}
-      <Dialog open={showScanner} onOpenChange={setShowScanner}>
-        <DialogContent className="sm:max-w-lg border-slate-300">
-          <DialogHeader>
-            <DialogTitle className="text-center text-slate-900">
-              Scan NFC to mint Stamps
-            </DialogTitle>
-          </DialogHeader>
-          <NFCScan
-            onResult={handleNFCScan}
-            onClose={() => setShowScanner(false)}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

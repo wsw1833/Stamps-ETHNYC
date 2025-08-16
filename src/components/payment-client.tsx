@@ -115,12 +115,12 @@ export default function PaymentClient() {
 
     try {
       // Simulate payment processing, if success then burn token.
-      const currentChain = chains.find((c) => c.id === chainId);
-      sendTransaction({
+      await sendTransaction({
         to: storeAddress as `0x${string}`, // receiver
         value: parseEther(finalTotal.toString()), // amount (in ETH/FLOW EVM)
       });
 
+      const currentChain = chains.find((c) => c.id === chainId);
       // Extract all stamp IDs from applied stamps
       const appliedStampIds = appliedStamps.map((stamp) =>
         BigInt(stamp.stampId)
@@ -137,7 +137,7 @@ export default function PaymentClient() {
         'used'
       );
 
-      if (response.success) {
+      if (response.success || data) {
         setTimeout(() => {
           setIsProcessing(false);
           router.push(
@@ -208,7 +208,7 @@ export default function PaymentClient() {
                           ? `${availableStamps.length} stamps${
                               availableStamps.length !== 1 ? 's' : ''
                             } available from your active stamps`
-                          : 'No stamps available for this restaurant'}
+                          : 'No stamps available for this store'}
                       </p>
                     </div>
                     <Badge
@@ -336,7 +336,7 @@ export default function PaymentClient() {
                         </p>
                       </div>
                       <p className="font-semibold text-slate-900">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        {`$${(item.price * item.quantity).toFixed(2)} FLOW`}
                       </p>
                     </div>
                   ))}
@@ -356,15 +356,15 @@ export default function PaymentClient() {
                 <CardContent className="space-y-3">
                   <div className="flex justify-between text-slate-900">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>${subtotal.toFixed(2)} FLOW</span>
                   </div>
                   <div className="flex justify-between text-slate-900">
                     <span>Delivery Fee</span>
-                    <span>${deliveryFee.toFixed(2)}</span>
+                    <span>${deliveryFee.toFixed(2)} FLOW</span>
                   </div>
                   <div className="flex justify-between text-slate-900">
                     <span>Tax (8%)</span>
-                    <span>${tax.toFixed(2)}</span>
+                    <span>${tax.toFixed(2)} FLOW</span>
                   </div>
                   {totalDiscount > 0 && (
                     <>
@@ -381,13 +381,13 @@ export default function PaymentClient() {
                               className="flex justify-between text-emerald-600 text-sm"
                             >
                               <span>{stamp.discountType} Discount</span>
-                              <span>-${voucherDiscount.toFixed(2)}</span>
+                              <span>-${voucherDiscount.toFixed(2)} FLOW</span>
                             </div>
                           );
                         })}
                         <div className="flex justify-between text-emerald-600 font-medium border-t border-emerald-200 pt-2">
                           <span>Total Stamps Savings</span>
-                          <span>-${totalDiscount.toFixed(2)}</span>
+                          <span>-${totalDiscount.toFixed(2)} FLOW</span>
                         </div>
                       </div>
                     </>
@@ -395,7 +395,7 @@ export default function PaymentClient() {
                   <Separator className="bg-slate-200" />
                   <div className="flex justify-between font-bold text-lg text-slate-900">
                     <span>Total</span>
-                    <span>${finalTotal.toFixed(2)}</span>
+                    <span>${finalTotal.toFixed(2)} FLOW</span>
                   </div>
                   {totalDiscount > 0 && (
                     <div className="text-center">
@@ -467,7 +467,7 @@ export default function PaymentClient() {
                     Processing Payment...
                   </div>
                 ) : (
-                  `Pay $${finalTotal.toFixed(2)}`
+                  `Pay $${finalTotal.toFixed(2)} FLOW`
                 )}
               </Button>
             </div>
