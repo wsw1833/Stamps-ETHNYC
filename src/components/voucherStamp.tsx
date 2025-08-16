@@ -8,7 +8,6 @@ import {
   Wine,
   Bed,
   Crown,
-  FileText,
   Globe,
 } from 'lucide-react';
 import pinata from '@/images/pinata.svg';
@@ -38,7 +37,6 @@ const VoucherStamp = ({
   priceOffer,
   validUntil,
   ipfs,
-  status,
   className,
   variant = 'subway',
 }: voucherStampProps) => {

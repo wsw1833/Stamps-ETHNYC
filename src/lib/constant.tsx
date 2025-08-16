@@ -2,8 +2,8 @@ import { Stamp } from '@/app/dashboard/page';
 
 export const mockVouchers: Stamp[] = [
   {
-    tokenid: '1',
-    restaurantName: 'SUBWAY NYC',
+    stampId: '1',
+    storeName: 'SUBWAY NYC',
     discount: '15% OFF',
     discountType: 'percentage',
     discountAmount: 15,
@@ -14,8 +14,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'subway',
   },
   {
-    tokenid: '2',
-    restaurantName: 'UBER RIDE',
+    stampId: '2',
+    storeName: 'UBER RIDE',
     discount: '$5 OFF',
     discountType: 'percentage',
     discountAmount: 5.0,
@@ -26,8 +26,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'taxi',
   },
   {
-    tokenid: '3',
-    restaurantName: 'BUS PASS',
+    stampId: '3',
+    storeName: 'BUS PASS',
     discount: '$10 OFF',
     validUntil: '2024-12-20',
     status: 'active',
@@ -38,8 +38,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'manhattan',
   },
   {
-    tokenid: '4',
-    restaurantName: 'Sushi Spot',
+    stampId: '4',
+    storeName: 'Sushi Spot',
     discount: 'Buy 1 Get 1',
     validUntil: '2025-10-30',
     status: 'expired',
@@ -50,8 +50,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'restaurant',
   },
   {
-    tokenid: '5',
-    restaurantName: 'NYC BAR',
+    stampId: '5',
+    storeName: 'NYC BAR',
     discount: '15% OFF',
     validUntil: '2024-12-25',
     status: 'used',
@@ -62,8 +62,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'bar',
   },
   {
-    tokenid: '6',
-    restaurantName: 'Coffee Corner',
+    stampId: '6',
+    storeName: 'Coffee Corner',
     discount: '$3 OFF',
     validUntil: '2024-12-20',
     status: 'active',
@@ -74,8 +74,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'coffee',
   },
   {
-    tokenid: '7',
-    restaurantName: 'POD 39 HOTEL',
+    stampId: '7',
+    storeName: 'POD 39 HOTEL',
     discount: '10% OFF',
     validUntil: '2024-10-15',
     status: 'expired',
@@ -86,8 +86,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'hotel',
   },
   {
-    tokenid: '8',
-    restaurantName: 'Burger Barn',
+    stampId: '8',
+    storeName: 'Burger Barn',
     discount: '$8 OFF',
     validUntil: '2025-11-30',
     status: 'active',
@@ -98,8 +98,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'restaurant',
   },
   {
-    tokenid: '9',
-    restaurantName: 'Steakhouse NYC',
+    stampId: '9',
+    storeName: 'Steakhouse NYC',
     discount: '30% OFF',
     validUntil: '2024-09-15',
     status: 'expired',
@@ -110,8 +110,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'restaurant',
   },
   {
-    tokenid: '10',
-    restaurantName: 'Brooklyn Deli',
+    stampId: '10',
+    storeName: 'Brooklyn Deli',
     discount: '$12 OFF',
     validUntil: '2024-11-20',
     status: 'used',
@@ -122,8 +122,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'restaurant',
   },
   {
-    tokenid: '11',
-    restaurantName: 'LEGO STORE',
+    stampId: '11',
+    storeName: 'LEGO STORE',
     discount: '$5 OFF',
     validUntil: '2024-12-25',
     status: 'active',
@@ -134,8 +134,8 @@ export const mockVouchers: Stamp[] = [
     variant: 'luxury',
   },
   {
-    tokenid: '12',
-    restaurantName: 'Pizza Palace',
+    stampId: '12',
+    storeName: 'Pizza Palace',
     discount: '$7 OFF',
     validUntil: '2025-12-18',
     status: 'active',

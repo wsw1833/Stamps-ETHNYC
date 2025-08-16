@@ -1,6 +1,5 @@
-import { unique } from 'next/dist/build/utils';
+import mongoose from 'mongoose';
 
-const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 // Named Stamp Schema
@@ -15,36 +14,35 @@ const StampSchema = new Schema(
       type: String,
       required: true,
     },
-    txHash: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-      required: true,
-    },
-    ipfs: {
-      type: String,
-      required: true,
-    },
     storeName: {
       type: String,
       required: true,
     },
-    voucherType: {
+    discount: {
       type: String,
       required: true,
     },
-    voucherAmount: {
+    discountType: {
+      type: String,
+      required: true,
+    },
+    disountAmount: {
       type: Number,
       required: true,
       min: 0,
       max: 100,
     },
+    txHash: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     validUntil: {
       type: Date,
+      required: true,
+    },
+    ipfs: {
+      type: String,
       required: true,
     },
     status: {
@@ -55,6 +53,11 @@ const StampSchema = new Schema(
     },
     variant: {
       type: String,
+      required: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
       required: true,
     },
   },

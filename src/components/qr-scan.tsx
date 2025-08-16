@@ -7,51 +7,11 @@ import { X, Zap, Target } from 'lucide-react';
 interface QRScannerProps {
   onResult: (result: string) => void;
   onClose: () => void;
-  scanType: 'voucher' | 'payment';
 }
 
-export function QRScan({ onResult, onClose, scanType }: QRScannerProps) {
+export function QRScan({ onResult, onClose }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(true);
   const [scanProgress, setScanProgress] = useState(0);
-
-  useEffect(() => {
-    // Start scanning immediately
-    const progressInterval = setInterval(() => {
-      setScanProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          // Simulate successful scan
-          setTimeout(() => {
-            const mockResults =
-              scanType === 'payment'
-                ? [
-                    'Pizza Palace',
-                    'Burger Barn',
-                    'Sushi Spot',
-                    'Taco Town',
-                    'Coffee Corner',
-                  ]
-                : [
-                    'VOUCHER20',
-                    'SAVE15',
-                    'WELCOME10',
-                    'NEWUSER25',
-                    'SPECIAL30',
-                  ];
-            const randomResult =
-              mockResults[Math.floor(Math.random() * mockResults.length)];
-            console.log('QR Scanner result:', randomResult);
-            setIsScanning(false);
-            onResult(randomResult);
-          }, 500);
-          return 100;
-        }
-        return prev + 2;
-      });
-    }, 50);
-
-    return () => clearInterval(progressInterval);
-  }, [onResult, scanType]);
 
   return (
     <div className="flex flex-col items-center space-y-6 p-6">
@@ -100,12 +60,6 @@ export function QRScan({ onResult, onClose, scanType }: QRScannerProps) {
             style={{ width: `${scanProgress}%` }}
           />
         </div>
-
-        <p className="text-sm text-gray-600">
-          {scanType === 'payment'
-            ? 'Point camera at restaurant QR code'
-            : 'Point camera at voucher QR code'}
-        </p>
       </div>
 
       {/* Cancel Button */}

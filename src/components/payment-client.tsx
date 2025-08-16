@@ -21,10 +21,8 @@ import {
   Ticket,
   Calculator,
   Plus,
-  X,
 } from 'lucide-react';
 import { StampData } from '@/app/actions/stampActions';
-import { mockVouchers } from '@/lib/constant';
 import PaymentVoucher from './paymentVoucher';
 import { useStoreStamps } from '@/hooks/useStoreStamps';
 
@@ -51,8 +49,7 @@ export default function PaymentClient() {
 
     const isNotExpired = expirationDate >= currentDate;
     const isForThisRestaurant =
-      stamp.restaurantName.toLowerCase().trim() ===
-      restaurant.toLowerCase().trim();
+      stamp.storeName.toLowerCase().trim() === restaurant.toLowerCase().trim();
     const isActive = stamp.status === 'active';
     const isNotAlreadyApplied = !appliedStamps.find(
       (as) => as.stampId === stamp.stampId
@@ -80,10 +77,10 @@ export default function PaymentClient() {
 
   // Calculate total discount from all applied vouchers
   const totalDiscount = appliedStamps.reduce((total, stamp) => {
-    if (stamp.voucherType === 'percentage') {
-      return total + subtotal * (stamp.voucherAmount / 100);
+    if (stamp.discountType === 'percentage') {
+      return total + subtotal * (stamp.discountAmount / 100);
     } else {
-      return total + stamp.voucherAmount;
+      return total + stamp.discountAmount;
     }
   }, 0);
 
@@ -253,8 +250,8 @@ export default function PaymentClient() {
                       {appliedStamps.map((stamp, index) => (
                         <PaymentVoucher
                           key={stamp.stampId}
-                          stampType={stamp.restaurantName}
-                          priceOffer={stamp.voucherAmount.toString()}
+                          stampType={stamp.discountType}
+                          priceOffer={stamp.discountAmount.toString()}
                           validUntil={stamp.validUntil}
                           ipfs={stamp.ipfs}
                           status={stamp.status}
@@ -344,15 +341,15 @@ export default function PaymentClient() {
                       <div className="space-y-2">
                         {appliedStamps.map((stamp, index) => {
                           const voucherDiscount =
-                            stamp.voucherType === 'percentage'
-                              ? subtotal * (stamp.voucherAmount / 100)
-                              : stamp.voucherAmount;
+                            stamp.discountType === 'percentage'
+                              ? subtotal * (stamp.discountAmount / 100)
+                              : stamp.discountAmount;
                           return (
                             <div
                               key={stamp.stampId}
                               className="flex justify-between text-emerald-600 text-sm"
                             >
-                              <span>{stamp.voucherType} Discount</span>
+                              <span>{stamp.discountType} Discount</span>
                               <span>-${voucherDiscount.toFixed(2)}</span>
                             </div>
                           );
@@ -478,15 +475,15 @@ export default function PaymentClient() {
             ) : (
               availableStamps.map((stamp) => {
                 const potentialSavings =
-                  stamp.voucherType === 'percentage'
-                    ? subtotal * (stamp.voucherAmount / 100)
-                    : stamp.voucherAmount;
+                  stamp.discountType === 'percentage'
+                    ? subtotal * (stamp.discountAmount / 100)
+                    : stamp.discountAmount;
 
                 return (
                   <PaymentVoucher
                     key={stamp.stampId}
-                    stampType={stamp.restaurantName}
-                    priceOffer={stamp.voucherAmount.toString()}
+                    stampType={stamp.storeName}
+                    priceOffer={stamp.discountAmount.toString()}
                     validUntil={stamp.validUntil}
                     ipfs={stamp.ipfs}
                     status={stamp.status}

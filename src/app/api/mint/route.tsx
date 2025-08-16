@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
       'voucherType',
       'voucherAmount',
       'validUntil',
+      'variant',
     ];
 
     for (const field of requiredFields) {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if stamp with same ID already exists
-    const existingStamp = await Stamp.findOne({ id: body.id });
+    const existingStamp = await Stamp.findOne({ stampId: body.stampId });
     if (existingStamp) {
       return NextResponse.json(
         { success: false, error: 'Stamp with this ID already exists' },
@@ -49,17 +50,18 @@ export async function POST(request: NextRequest) {
 
     // Create new stamp
     const newStamp = new Stamp({
-      id: body.id,
       ownerAddress: body.ownerAddress,
       stampId: body.stampId,
-      txHash: body.txHash,
-      ipfs: body.ipfs,
       storeName: body.storeName,
-      voucherType: body.voucherType,
-      voucherAmount: body.voucherAmount,
+      discount: body.discount,
+      discountType: body.discountType,
+      discountAmount: body.discountAmount,
+      txHash: body.txHash,
       validUntil: new Date(body.validUntil),
-      status: body.status || 'active',
-      createdAt: body.createdAt ? new Date(body.createdAt) : new Date(),
+      ipfs: body.ipfs,
+      status: 'active',
+      createdAt: new Date(),
+      variant: body.variant,
     });
 
     const savedStamp = await newStamp.save();

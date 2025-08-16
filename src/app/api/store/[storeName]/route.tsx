@@ -2,21 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { Stamp } from '@/models/schema';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { storeName: string } }
-) {
+export async function GET(request: NextRequest, { params }: any) {
   try {
     await connectDB();
 
-    const { storeName } = await params;
+    const { storeName } = params;
     const { searchParams } = new URL(request.url);
 
     // Build filters from query parameters
     const filters: any = { storeName };
     if (searchParams.get('status')) filters.status = searchParams.get('status');
-    if (searchParams.get('voucherType'))
-      filters.voucherType = searchParams.get('voucherType');
+    if (searchParams.get('discountType'))
+      filters.discountType = searchParams.get('discountType');
 
     const stamps = await Stamp.find(filters).sort({ createdAt: -1 }).lean();
 

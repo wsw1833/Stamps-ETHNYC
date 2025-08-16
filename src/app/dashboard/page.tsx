@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,19 +12,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Search, QrCode, Camera, LogOut, History, Ticket } from 'lucide-react';
+import { Search, QrCode, Camera, History, Ticket } from 'lucide-react';
 import { QRScan } from '@/components/qr-scan';
 import globe from '@/images/globe.svg';
 import Image from 'next/image';
 import VoucherStamp from '@/components/voucherStamp';
 import { mockVouchers } from '@/lib/constant';
 import { useStamps } from '@/hooks/useStamps';
-import { mintStamp } from '../actions/stampActions';
+import { mintStamp, StampData } from '../actions/stampActions';
 import { useDynamicContext, DynamicWidget } from '@dynamic-labs/sdk-react-core';
+import { toast } from 'sonner';
+import { useAccount } from 'wagmi';
+import { pinata } from '../config/pinata';
+import { form } from 'viem/chains';
+
 export interface Stamp {
-  tokenid: string;
+  stampId: string;
   ownerAddress?: string;
-  restaurantName: string;
+  storeName: string;
   discount: string;
   discountType: string;
   discountAmount: number;
@@ -43,16 +48,29 @@ export interface Stamp {
     | 'luxury';
 }
 
+interface NfcData {
+  [key: string]: string | undefined;
+  ipfs?: string;
+}
+
 export default function DashboardPage() {
-  //fetch acc address;
-  const { stamps, isLoading, refetch } = useStamps(''); //adress here.
+  const { address } = useAccount();
+  const { stamps, isLoading, refetch } = useStamps();
   const [vouchers, setVouchers] = useState<Stamp[]>(mockVouchers);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [nfcSupported, setNfcSupported] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const [scanType, setScanType] = useState<'voucher' | 'payment'>('voucher');
   const [activeTab, setActiveTab] = useState('active');
   const { user } = useDynamicContext();
   const router = useRouter();
+
+  useEffect(() => {
+    // Check NFC support on component mount
+    if (typeof window !== 'undefined' && 'NDEFReader' in window) {
+      setNfcSupported(true);
+    }
+  }, []);
 
   // Active tab: Only vouchers with status "active"
   const activeVouchers = vouchers.filter((v) => v.status === 'active');
@@ -65,23 +83,86 @@ export default function DashboardPage() {
   const getFilteredVouchers = (voucherList: Stamp[]) => {
     return voucherList.filter(
       (voucher) =>
-        voucher.restaurantName
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
+        voucher.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         voucher.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
   };
 
   const handleScanMint = async () => {
-    setShowQRScanner(true);
-    //nfc-scan and mint here.
-    const data = stamps[0];
-    const result = await mintStamp(data);
-    // refetch stamps here.
+    if (!nfcSupported || !address) {
+      toast.error('Web NFC API is not supported in this browser.');
+      return;
+    }
+
+    try {
+      setShowScanner(true);
+      toast.info('Scanning NFC Tag...');
+
+      const ndef = new (window as any).NDEFReader();
+      await ndef.scan();
+
+      ndef.addEventListener('reading', async ({ message }: any) => {
+        // Parse NFC data
+        const nfcData: NfcData = {};
+        for (const record of message.records) {
+          if (record.recordType === 'text') {
+            const text = new TextDecoder(record.encoding).decode(record.data);
+            const [key, ...valueParts] = text.split(':');
+            if (key) {
+              nfcData[key] = valueParts.join(':');
+            }
+          }
+        }
+
+        if (!nfcData.ipfs) {
+          toast.error('Invalid NFC data');
+          setShowScanner(false);
+          return;
+        }
+
+        let metadata: any;
+
+        const file = await pinata.gateways.public.get(nfcData.ipfs);
+        if (file.data) {
+          metadata = file.data;
+          toast.success(`NFC Data Read Successfully ${metadata.discount}`);
+        }
+
+        //nfc-scan and mint here.
+        // const stampId = await mintParentNFT(
+        //   collection_ID,
+        //   nfcData.name,
+        //   nfcData.description,
+        //   nfcData.image_url,
+        //   ownerAddress
+        // );
+
+        const formData: StampData = {
+          stampId: `stampId`,
+          ownerAddress: address,
+          txHash: `stampId.txHash`,
+          storeName: metadata.storeName,
+          discount: metadata.discount,
+          discountType: metadata.vouchertype,
+          discountAmount: metadata.voucheramount,
+          validUntil: metadata.validuntil,
+          ipfs: nfcData.ipfs,
+          variant: metadata.variant,
+        };
+
+        const result = await mintStamp(formData);
+        if (result) {
+          refetch();
+          toast.success('NFT Minted Successfully!');
+        }
+      });
+    } catch (err) {
+      toast('NFT Minting Failed!');
+    }
   };
 
   const handleScanPay = (result: string) => {
-    setShowQRScanner(false);
+    setShowScanner(false); //true and do nfc scan and payment.
     router.push(`/payment?restaurant=${result}`);
   };
 
@@ -186,12 +267,11 @@ export default function DashboardPage() {
                 ) : (
                   getFilteredVouchers(activeVouchers).map((voucher) => (
                     <VoucherStamp
-                      key={voucher.tokenid}
-                      voucherType={voucher.restaurantName}
+                      key={voucher.stampId}
+                      voucherType={voucher.storeName}
                       priceOffer={voucher.discount}
                       validUntil={voucher.validUntil}
                       ipfs={voucher.ipfs}
-                      status={voucher.status}
                       variant={voucher.variant}
                     />
                   ))
@@ -216,12 +296,11 @@ export default function DashboardPage() {
                 ) : (
                   getFilteredVouchers(historyVouchers).map((voucher) => (
                     <VoucherStamp
-                      key={voucher.tokenid}
-                      voucherType={voucher.restaurantName}
+                      key={voucher.stampId}
+                      voucherType={voucher.storeName}
                       priceOffer={voucher.discount}
                       validUntil={voucher.validUntil}
                       ipfs={voucher.ipfs}
-                      status={voucher.status}
                       variant={voucher.variant}
                     />
                   ))
@@ -232,20 +311,17 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* QR Scanner Modal */}
-      <Dialog open={showQRScanner} onOpenChange={setShowQRScanner}>
+      {/*NFC Scanner Modal */}
+      <Dialog open={showScanner} onOpenChange={setShowScanner}>
         <DialogContent className="sm:max-w-lg border-slate-300">
           <DialogHeader>
             <DialogTitle className="text-center text-slate-900">
-              {scanType === 'payment'
-                ? 'Scan Restaurant QR Code'
-                : 'Scan Voucher QR Code'}
+              Scan NFC to mint Stamps
             </DialogTitle>
           </DialogHeader>
           <QRScan
             onResult={handleScanPay}
-            onClose={() => setShowQRScanner(false)}
-            scanType={scanType}
+            onClose={() => setShowScanner(false)}
           />
         </DialogContent>
       </Dialog>

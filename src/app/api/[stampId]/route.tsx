@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { Stamp } from '@/models/schema';
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { stampId: string } }
-) {
+
+export async function GET(request: NextRequest, { params }: any) {
   try {
     await connectDB();
 
-    const { stampId } = await params;
+    const { stampId } = params;
 
     const stamp = await Stamp.findOne({ stampId }).lean();
 
@@ -37,7 +35,7 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { stampId: string } }
+  { params }: { params: any }
 ) {
   try {
     await connectDB();

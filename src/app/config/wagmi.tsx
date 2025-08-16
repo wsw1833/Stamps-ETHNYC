@@ -1,11 +1,12 @@
 import { createConfig } from 'wagmi';
 import { http } from 'viem';
-import { flowTestnet } from 'viem/chains';
+import { flowTestnet, sepolia } from 'viem/chains';
 
 export const config = createConfig({
-  chains: [flowTestnet],
+  chains: [sepolia, flowTestnet],
   multiInjectedProviderDiscovery: false,
   transports: {
+    [sepolia.id]: http(),
     [flowTestnet.id]: http(),
   },
 });

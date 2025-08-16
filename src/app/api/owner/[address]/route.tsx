@@ -2,14 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { Stamp } from '@/models/schema';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { address: string } }
-) {
+export async function GET(request: NextRequest, { params }: any) {
   try {
     await connectDB();
 
-    const { address } = await params;
+    const { address } = params;
     const { searchParams } = new URL(request.url);
 
     // Build filters from query parameters
@@ -17,8 +14,8 @@ export async function GET(
     if (searchParams.get('status')) filters.status = searchParams.get('status');
     if (searchParams.get('storeName'))
       filters.storeName = searchParams.get('storeName');
-    if (searchParams.get('voucherType'))
-      filters.voucherType = searchParams.get('voucherType');
+    if (searchParams.get('discountType'))
+      filters.voucherType = searchParams.get('discountType');
 
     const stamps = await Stamp.find(filters).sort({ createdAt: -1 }).lean();
 

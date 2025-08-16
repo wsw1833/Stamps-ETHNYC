@@ -2,6 +2,7 @@
 
 import { StampData, getStampsByOwnerAddress } from '@/app/actions/stampActions';
 import { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
 
 interface UseStampsReturn {
   stamps: StampData[];
@@ -10,13 +11,14 @@ interface UseStampsReturn {
   refetch: () => Promise<void>;
 }
 
-export const useStamps = (accountAddress: string): UseStampsReturn => {
+export const useStamps = (): UseStampsReturn => {
+  const { address } = useAccount();
   const [stamps, setStamps] = useState<StampData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAllStamps = async () => {
-    if (!accountAddress) {
+    if (!address) {
       setIsLoading(false);
       return;
     }
@@ -25,7 +27,7 @@ export const useStamps = (accountAddress: string): UseStampsReturn => {
     setError(null);
 
     try {
-      const result = await getStampsByOwnerAddress(accountAddress);
+      const result = await getStampsByOwnerAddress(address);
 
       if (result.success) {
         setStamps(result.data || []);
@@ -42,7 +44,7 @@ export const useStamps = (accountAddress: string): UseStampsReturn => {
 
   useEffect(() => {
     fetchAllStamps();
-  }, [accountAddress]);
+  }, [address]);
 
   return {
     stamps,

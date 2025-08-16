@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  DynamicContextProvider,
-  DynamicWidget,
-} from '@dynamic-labs/sdk-react-core';
+import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core';
 import { EthereumWalletConnectors } from '@dynamic-labs/ethereum';
 import { FlowWalletConnectors } from '@dynamic-labs/flow';
 import { DynamicWagmiConnector } from '@dynamic-labs/wagmi-connector';

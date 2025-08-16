@@ -2,15 +2,15 @@
 import { revalidatePath } from 'next/cache';
 
 export interface StampData {
-  ownerAddress: string;
-  restaurantName: string;
+  ownerAddress: `0x${string}`;
   stampId: string;
-  txHash: string;
-  ipfs: string;
   storeName: string;
-  voucherType: string;
-  voucherAmount: number;
+  discount: string;
+  discountType: string;
+  discountAmount: number;
+  txHash: string;
   validUntil: string;
+  ipfs: string;
   status?: string;
   createdAt?: string;
   variant?:
@@ -22,14 +22,6 @@ export interface StampData {
     | 'bar'
     | 'hotel'
     | 'luxury';
-}
-
-interface ApiResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
-  message?: string;
-  count?: number;
 }
 
 const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000';
@@ -67,13 +59,14 @@ export const mintStamp = async (stampData: StampData) => {
 // Get stamps by owner address
 export const getStampsByOwnerAddress = async (
   ownerAddress: string,
-  filters?: { status?: string; storeName?: string; voucherType?: string }
+  filters?: { status?: string; storeName?: string; discountType?: string }
 ) => {
   try {
     const params = new URLSearchParams();
     if (filters?.status) params.append('status', filters.status);
     if (filters?.storeName) params.append('storeName', filters.storeName);
-    if (filters?.voucherType) params.append('voucherType', filters.voucherType);
+    if (filters?.discountType)
+      params.append('discountType', filters.discountType);
 
     const queryString = params.toString();
     const url = `${baseUrl}/api/owner/${ownerAddress}${
@@ -146,12 +139,13 @@ export const changeStampStatus = async (
 // Get stamps filtered by store name
 export const getStampsFilteredByStoreName = async (
   storeName: string,
-  filters?: { status?: string; voucherType?: string }
+  filters?: { status?: string; discountType?: string }
 ) => {
   try {
     const params = new URLSearchParams();
     if (filters?.status) params.append('status', filters.status);
-    if (filters?.voucherType) params.append('voucherType', filters.voucherType);
+    if (filters?.discountType)
+      params.append('discountType', filters.discountType);
 
     const queryString = params.toString();
     const url = `${baseUrl}/api/store/${storeName}${
