@@ -360,7 +360,7 @@ export default function DashboardPage() {
                         Ready to Pay
                       </DrawerTitle>
                       <DrawerDescription className="text-slate-600 mt-2">
-                        Scan the store's NFC tag to proceed with payment
+                        Scan the store&apos;s NFC tag to proceed with payment
                       </DrawerDescription>
                     </DrawerHeader>
 

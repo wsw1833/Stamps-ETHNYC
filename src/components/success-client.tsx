@@ -6,15 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle, Home, Download } from 'lucide-react';
-
+import { formatAddress } from '@/lib/utils';
 export default function SuccessClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const total = searchParams.get('total') || '36.79';
   const discount = searchParams.get('discount') || '0.00';
-  const txHash = searchParams.get('txHash') || '0x123....56789';
+  const txHash = searchParams.get('txHash') || '0x123445566778899';
   const currentChain = searchParams.get('chain') || 'FLOW EVM Testnet';
+  const storeName = searchParams.get('storeName');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
@@ -48,7 +49,7 @@ export default function SuccessClient() {
                 <div className="flex justify-between">
                   <span className="text-slate-600">Transaction Hash</span>
                   <span className="font-mono text-sm text-slate-900">
-                    {`${txHash}`}
+                    {`${formatAddress(txHash)}`}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -96,13 +97,13 @@ export default function SuccessClient() {
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                   <span className="text-amber-800">
-                    Order confirmed and sent to restaurant
+                    Order confirmed and sent to {storeName}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-slate-300 rounded-full"></div>
                   <span className="text-slate-600">
-                    Estimated preparation time: 15-20 minutes
+                    Estimated preparation time: 10-20 minutes
                   </span>
                 </div>
               </div>

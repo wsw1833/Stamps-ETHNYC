@@ -19,7 +19,12 @@ import { useStoreStamps } from '@/hooks/useStoreStamps';
 import { contractAddress } from '@/lib/constant';
 import { useStampNFT } from '@/hooks/useStampNFT';
 import { parseEther } from 'viem';
-import { useSendTransaction, useChainId, useChains } from 'wagmi';
+import {
+  useSendTransaction,
+  useChainId,
+  useChains,
+  useWaitForTransactionReceipt,
+} from 'wagmi';
 import Image from 'next/image';
 import flowIcon from '@/images/flow.svg';
 
@@ -31,17 +36,39 @@ export default function PaymentClient() {
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [appliedStamps, setAppliedStamps] = useState<StampData[]>([]);
   const [isAutoApplyComplete, setIsAutoApplyComplete] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<
+    'idle' | 'payment' | 'burn' | 'complete'
+  >('idle');
+
   const storeName = searchParams.get('storeName') || 'ETHGlobal';
   const storeAddress =
     searchParams.get('storeAddress') ||
     '0x3bBdBF48f5ff97A9C967B48d8512870612419f77';
+
   const { stamps } = useStoreStamps(storeName);
-  const { data, sendTransaction } = useSendTransaction();
+  const {
+    sendTransaction,
+    data: paymentTxHash,
+    isPending: isPaymentPending,
+    isSuccess: isPaymentSent,
+    error: paymentError,
+  } = useSendTransaction();
+
+  const {
+    isLoading: isPaymentConfirming,
+    isSuccess: isPaymentConfirmed,
+    error: confirmationError,
+  } = useWaitForTransactionReceipt({
+    hash: paymentTxHash,
+  });
+
   const { sponsoredBurn, isLoading: NFTMintLoading } = useStampNFT({
     contractAddress,
   });
+
   const chainId = useChainId();
   const chains = useChains();
+
   // Filter vouchers for this restaurant that are active and not expired
   const getFilteredStamps = () => {
     return stamps.filter((stamp) => {
@@ -74,6 +101,94 @@ export default function PaymentClient() {
       setIsAutoApplyComplete(true);
     }
   }, [filteredStamps, isAutoApplyComplete]);
+
+  // Handle the sequential flow after payment confirmation
+  useEffect(() => {
+    const processBurnAndRedirect = async () => {
+      if (!isPaymentConfirmed || !paymentTxHash || paymentStep !== 'payment')
+        return;
+
+      try {
+        console.log('Payment confirmed, starting burn process...');
+        setPaymentStep('burn');
+
+        const appliedStampIds = appliedStamps.map((stamp) =>
+          BigInt(stamp.stampId)
+        );
+
+        if (appliedStampIds.length > 0) {
+          console.log('Initiating sponsored burn...');
+          const txResult = await sponsoredBurn(appliedStampIds);
+          console.log('Burn transaction result:', txResult);
+
+          // Update stamp status
+          console.log('Updating stamp status...');
+          const response = await changeStampStatus(
+            appliedStampIds.toString(),
+            'used'
+          );
+
+          if (response.success) {
+            setPaymentStep('complete');
+            const currentChain = chains.find((c) => c.id === chainId);
+
+            setTimeout(() => {
+              setIsProcessing(false);
+              router.push(
+                `/success?total=${finalTotal.toFixed(
+                  2
+                )}&discount=${totalDiscount.toFixed(
+                  2
+                )}&txHash=${paymentTxHash}&chain=${
+                  currentChain?.name || 'Unknown'
+                }&storeName=${storeName}`
+              );
+            }, 2000);
+          }
+        } else {
+          setPaymentStep('complete');
+          const currentChain = chains.find((c) => c.id === chainId);
+
+          setTimeout(() => {
+            setIsProcessing(false);
+            router.push(
+              `/success?total=${finalTotal.toFixed(
+                2
+              )}&discount=${totalDiscount.toFixed(
+                2
+              )}&txHash=${paymentTxHash}&chain=${
+                currentChain?.name || 'Unknown'
+              }&storeName=${storeName}`
+            );
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Burn process failed:', error);
+        setIsProcessing(false);
+        setPaymentStep('idle');
+      }
+    };
+
+    processBurnAndRedirect();
+  }, [
+    isPaymentConfirmed,
+    paymentTxHash,
+    paymentStep,
+    appliedStamps,
+    sponsoredBurn,
+    chains,
+    chainId,
+    router,
+  ]);
+
+  // Handle payment errors
+  useEffect(() => {
+    if (paymentError || confirmationError) {
+      console.error('Payment error:', paymentError || confirmationError);
+      setIsProcessing(false);
+      setPaymentStep('idle');
+    }
+  }, [paymentError, confirmationError]);
 
   // Mock order details
   const orderItems = [
@@ -111,47 +226,39 @@ export default function PaymentClient() {
   };
 
   const handlePayment = async () => {
+    if (isProcessing) return;
+
     setIsProcessing(true);
+    setPaymentStep('payment');
 
     try {
-      // Simulate payment processing, if success then burn token.
+      console.log('Initiating payment transaction...');
       await sendTransaction({
-        to: storeAddress as `0x${string}`, // receiver
-        value: parseEther(finalTotal.toString()), // amount (in ETH/FLOW EVM)
+        to: storeAddress as `0x${string}`,
+        value: parseEther(finalTotal.toString()),
       });
-
-      const currentChain = chains.find((c) => c.id === chainId);
-      // Extract all stamp IDs from applied stamps
-      const appliedStampIds = appliedStamps.map((stamp) =>
-        BigInt(stamp.stampId)
-      );
-
-      if (appliedStampIds.length > 0) {
-        const txResult = await sponsoredBurn(appliedStampIds);
-        console.log('Burn transaction result:', txResult);
-      }
-
-      // change status of the stamps if token burn success and redirect to success page.
-      const response = await changeStampStatus(
-        appliedStampIds.toString(),
-        'used'
-      );
-
-      if (response.success || data) {
-        setTimeout(() => {
-          setIsProcessing(false);
-          router.push(
-            `/success?total=${finalTotal.toFixed(
-              2
-            )}&discount=${totalDiscount.toFixed(2)}&txHash=${data}&chain=${
-              currentChain?.name || 'Unknown'
-            }`
-          );
-        }, 3000);
-      }
     } catch (error) {
-      console.error('Payment or burn failed:', error);
+      console.error('Payment transaction failed:', error);
       setIsProcessing(false);
+      setPaymentStep('idle');
+    }
+  };
+
+  // Get current step status message
+  const getStatusMessage = () => {
+    switch (paymentStep) {
+      case 'payment':
+        if (isPaymentPending) return 'Confirming payment transaction...';
+        if (isPaymentConfirming) return 'Waiting for payment confirmation...';
+        return 'Processing payment...';
+      case 'burn':
+        return 'Processing stamp redemption...';
+      case 'complete':
+        return 'Redirecting to success page...';
+      default:
+        return isProcessing
+          ? 'Processing...'
+          : `Pay $${finalTotal.toFixed(2)} FLOW`;
     }
   };
 
@@ -455,16 +562,58 @@ export default function PaymentClient() {
                 </CardContent>
               </Card>
 
+              {/* Progress Indicator */}
+              {isProcessing && (
+                <Card className="border-slate-200 bg-blue-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-900">
+                          {getStatusMessage()}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <div
+                            className={`h-2 w-8 rounded ${
+                              paymentStep === 'payment' ||
+                              paymentStep === 'burn' ||
+                              paymentStep === 'complete'
+                                ? 'bg-blue-500'
+                                : 'bg-gray-300'
+                            }`}
+                          ></div>
+                          <div
+                            className={`h-2 w-8 rounded ${
+                              paymentStep === 'burn' ||
+                              paymentStep === 'complete'
+                                ? 'bg-blue-500'
+                                : 'bg-gray-300'
+                            }`}
+                          ></div>
+                          <div
+                            className={`h-2 w-8 rounded ${
+                              paymentStep === 'complete'
+                                ? 'bg-blue-500'
+                                : 'bg-gray-300'
+                            }`}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Pay Button */}
               <Button
                 onClick={handlePayment}
                 disabled={isProcessing}
-                className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-900 hover:to-black transition-all duration-200"
+                className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-900 hover:to-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? (
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    Processing Payment...
+                    {getStatusMessage()}
                   </div>
                 ) : (
                   `Pay $${finalTotal.toFixed(2)} FLOW`
