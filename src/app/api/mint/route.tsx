@@ -10,14 +10,15 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     const requiredFields = [
-      'ownerAddress',
       'stampId',
+      'ownerAddress',
       'txHash',
-      'ipfs',
       'storeName',
-      'voucherType',
-      'voucherAmount',
+      'discount',
+      'discountType',
+      'discountAmount',
       'validUntil',
+      'ipfs',
       'variant',
     ];
 
@@ -50,18 +51,18 @@ export async function POST(request: NextRequest) {
 
     // Create new stamp
     const newStamp = new Stamp({
-      ownerAddress: body.ownerAddress,
       stampId: body.stampId,
+      ownerAddress: body.ownerAddress,
+      txHash: body.txHash,
       storeName: body.storeName,
       discount: body.discount,
       discountType: body.discountType,
       discountAmount: body.discountAmount,
-      txHash: body.txHash,
       validUntil: new Date(body.validUntil),
       ipfs: body.ipfs,
       status: 'active',
-      createdAt: new Date(),
       variant: body.variant,
+      createdAt: new Date(),
     });
 
     const savedStamp = await newStamp.save();

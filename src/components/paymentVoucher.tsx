@@ -80,7 +80,10 @@ const PaymentVoucher = ({
   };
 
   const ipfsHandler = () => {
-    window.open(ipfs, '_blank');
+    window.open(
+      `turquoise-perfect-caterpillar-941.mypinata.cloud/ipfs/${ipfs}`,
+      '_blank'
+    );
   };
 
   return (

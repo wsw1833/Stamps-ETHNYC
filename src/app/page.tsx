@@ -13,7 +13,6 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { useAccount } from 'wagmi';
 import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect';
 import { heroWords } from '@/lib/constant';
-import { pinata } from './config/pinata';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,21 +24,6 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
   }, [isConnected, router]);
-
-  const get = async () => {
-    const file = await pinata.gateways.public.get(
-      'bafkreiaz3jgcrszr4iu455meqxxedjce4cpa6uwo6py7w73niyarsqrj5u'
-    );
-    if (file.data) {
-      const metadata: any = file.data;
-      console.log(`NFC Data Read Successfully ${metadata.discount}`);
-      console.log(metadata);
-    }
-  };
-
-  useEffect(() => {
-    get();
-  }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-8">

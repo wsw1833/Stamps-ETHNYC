@@ -24,7 +24,6 @@ import { useDynamicContext, DynamicWidget } from '@dynamic-labs/sdk-react-core';
 import { toast } from 'sonner';
 import { useAccount } from 'wagmi';
 import { pinata } from '../config/pinata';
-import { form } from 'viem/chains';
 
 export interface Stamp {
   stampId: string;
@@ -94,6 +93,8 @@ export default function DashboardPage() {
       return;
     }
 
+    if (!address) return;
+
     try {
       setShowScanner(true);
       toast.info('Scanning NFC Tag...');
@@ -125,7 +126,8 @@ export default function DashboardPage() {
         const file = await pinata.gateways.public.get(nfcData.ipfs);
         if (file.data) {
           metadata = file.data;
-          toast.success(`NFC Data Read Successfully ${metadata.discount}`);
+          console.log(metadata);
+          toast.success(`NFC Data Read Successfully`);
         }
 
         //nfc-scan and mint here.
@@ -139,21 +141,27 @@ export default function DashboardPage() {
 
         const formData: StampData = {
           stampId: `stampId`,
-          ownerAddress: address,
+          ownerAddress: address || '',
           txHash: `stampId.txHash`,
-          storeName: metadata.storeName,
-          discount: metadata.discount,
-          discountType: metadata.vouchertype,
-          discountAmount: metadata.voucheramount,
-          validUntil: metadata.validuntil,
-          ipfs: nfcData.ipfs,
-          variant: metadata.variant,
+          storeName: metadata?.storeName || 'ETHGlobal',
+          discount: metadata?.discount || '$15 OFF',
+          discountType: metadata?.voucherType || 'fixed',
+          discountAmount: metadata?.voucherAmount || 15,
+          validUntil: metadata?.validUntil || new Date().toISOString(),
+          ipfs: nfcData.ipfs || 'ipfs://',
+          variant: metadata?.variant || 'manhattan',
         };
 
+        console.log('Received stamp data:', formData);
+
         const result = await mintStamp(formData);
-        if (result) {
-          refetch();
+        if (result.success) {
+          setShowScanner(false);
           toast.success('NFT Minted Successfully!');
+          refetch();
+        } else {
+          toast.error(`Failed to mint: ${result.error || result.message}`);
+          console.error('Mint failed:', result);
         }
       });
     } catch (err) {

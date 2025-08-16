@@ -5,12 +5,15 @@ const { Schema } = mongoose;
 // Named Stamp Schema
 const StampSchema = new Schema(
   {
+    stampId: {
+      type: String,
+      required: true,
+    },
     ownerAddress: {
       type: String,
       required: true,
-      index: true,
     },
-    stampId: {
+    txHash: {
       type: String,
       required: true,
     },
@@ -26,16 +29,9 @@ const StampSchema = new Schema(
       type: String,
       required: true,
     },
-    disountAmount: {
+    discountAmount: {
       type: Number,
       required: true,
-      min: 0,
-      max: 100,
-    },
-    txHash: {
-      type: String,
-      required: true,
-      unique: true,
     },
     validUntil: {
       type: Date,
@@ -67,6 +63,6 @@ const StampSchema = new Schema(
   }
 );
 
-const Stamp = mongoose.models.Stamp || mongoose.model('Stamps', StampSchema);
+const Stamp = mongoose.models.Stamp || mongoose.model('Stamp', StampSchema);
 
 export { Stamp };

@@ -24,7 +24,9 @@ export interface StampData {
     | 'luxury';
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000';
+const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+  : 'http://localhost:3000';
 
 export const mintStamp = async (stampData: StampData) => {
   try {
@@ -36,10 +38,6 @@ export const mintStamp = async (stampData: StampData) => {
 
     const result = await response.json();
 
-    if (result.success) {
-      revalidatePath('/dashboard', 'layout');
-    }
-
     return {
       success: result.success,
       data: result.data,
@@ -50,7 +48,7 @@ export const mintStamp = async (stampData: StampData) => {
   } catch (error) {
     return {
       success: false,
-      error: 'Network error occurred',
+      error: error,
       status: 500,
     };
   }
@@ -90,7 +88,7 @@ export const getStampsByOwnerAddress = async (
   } catch (error) {
     return {
       success: false,
-      error: 'Network error occurred',
+      error: error,
       status: 500,
     };
   }
@@ -130,7 +128,7 @@ export const changeStampStatus = async (
   } catch (error) {
     return {
       success: false,
-      error: 'Network error occurred',
+      error: error,
       status: 500,
     };
   }
@@ -170,7 +168,7 @@ export const getStampsFilteredByStoreName = async (
   } catch (error) {
     return {
       success: false,
-      error: 'Network error occurred',
+      error: error,
       status: 500,
     };
   }
@@ -195,7 +193,7 @@ export const getStampById = async (stampId: string) => {
   } catch (error) {
     return {
       success: false,
-      error: 'Network error occurred',
+      error: error,
       status: 500,
     };
   }
