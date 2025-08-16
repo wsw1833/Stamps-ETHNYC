@@ -12,54 +12,35 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Search, QrCode, Camera, History, Ticket } from 'lucide-react';
-import { QRScan } from '@/components/qr-scan';
+import { Search, Scan, History, Ticket, NfcIcon } from 'lucide-react';
+import { NFCScan } from '@/components/nfc-scan';
 import globe from '@/images/globe.svg';
 import Image from 'next/image';
 import VoucherStamp from '@/components/voucherStamp';
-import { mockVouchers } from '@/lib/constant';
 import { useStamps } from '@/hooks/useStamps';
 import { mintStamp, StampData } from '../actions/stampActions';
 import { useDynamicContext, DynamicWidget } from '@dynamic-labs/sdk-react-core';
 import { toast } from 'sonner';
 import { useAccount } from 'wagmi';
 import { pinata } from '../config/pinata';
-
-export interface Stamp {
-  stampId: string;
-  ownerAddress?: string;
-  storeName: string;
-  discount: string;
-  discountType: string;
-  discountAmount: number;
-  validUntil: string;
-  status: 'active' | 'expired' | 'used';
-  ipfs: string;
-  description: string;
-  variant?:
-    | 'taxi'
-    | 'subway'
-    | 'manhattan'
-    | 'coffee'
-    | 'restaurant'
-    | 'bar'
-    | 'hotel'
-    | 'luxury';
-}
+import { useStampNFT } from '@/hooks/useStampNFT';
+import { contractAddress } from '@/lib/constant';
 
 interface NfcData {
   [key: string]: string | undefined;
   ipfs?: string;
+  storeName?: string;
 }
 
 export default function DashboardPage() {
   const { address } = useAccount();
   const { stamps, isLoading, refetch } = useStamps();
-  const [vouchers, setVouchers] = useState<Stamp[]>(mockVouchers);
+  const { sponsoredMint, isLoading: NFTMintLoading } = useStampNFT({
+    contractAddress,
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [nfcSupported, setNfcSupported] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
-  const [scanType, setScanType] = useState<'voucher' | 'payment'>('voucher');
   const [activeTab, setActiveTab] = useState('active');
   const { user } = useDynamicContext();
   const router = useRouter();
@@ -72,18 +53,18 @@ export default function DashboardPage() {
   }, []);
 
   // Active tab: Only vouchers with status "active"
-  const activeVouchers = vouchers.filter((v) => v.status === 'active');
+  const activeStamps = stamps.filter((s) => s.status === 'active');
 
   // History tab: All vouchers with status "expired" or "used"
-  const historyVouchers = vouchers.filter(
-    (v) => v.status === 'expired' || v.status === 'used'
+  const historyStamps = stamps.filter(
+    (s) => s.status === 'expired' || s.status === 'used'
   );
 
-  const getFilteredVouchers = (voucherList: Stamp[]) => {
-    return voucherList.filter(
-      (voucher) =>
-        voucher.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        voucher.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const getFilteredStamps = (stampList: StampData[]) => {
+    return stampList.filter(
+      (stamp) =>
+        stamp.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        stamp.discount.toLowerCase().includes(searchQuery.toLowerCase())
     );
   };
 
@@ -130,19 +111,14 @@ export default function DashboardPage() {
           toast.success(`NFC Data Read Successfully`);
         }
 
-        //nfc-scan and mint here.
-        // const stampId = await mintParentNFT(
-        //   collection_ID,
-        //   nfcData.name,
-        //   nfcData.description,
-        //   nfcData.image_url,
-        //   ownerAddress
-        // );
+        const txResult = await sponsoredMint(nfcData.ipfs.trim());
+
+        console.log('minting result', txResult);
 
         const formData: StampData = {
-          stampId: `stampId`,
+          stampId: txResult.stampId,
           ownerAddress: address || '',
-          txHash: `stampId.txHash`,
+          txHash: txResult.transactionHash,
           storeName: metadata?.storeName || 'ETHGlobal',
           discount: metadata?.discount || '$15 OFF',
           discountType: metadata?.voucherType || 'fixed',
@@ -169,15 +145,52 @@ export default function DashboardPage() {
     }
   };
 
-  const handleScanPay = (result: string) => {
-    setShowScanner(false); //true and do nfc scan and payment.
-    router.push(`/payment?restaurant=${result}`);
+  const handleNFCScan = async () => {
+    if (!nfcSupported || !address) {
+      toast.error('Web NFC API is not supported in this browser.');
+      return;
+    }
+
+    if (!address) return;
+
+    try {
+      setShowScanner(true);
+      toast.info('Scanning NFC Tag...');
+
+      const ndef = new (window as any).NDEFReader();
+      await ndef.scan();
+
+      ndef.addEventListener('reading', async ({ message }: any) => {
+        // Parse NFC data
+        const nfcData: NfcData = {};
+        for (const record of message.records) {
+          if (record.recordType === 'text') {
+            const text = new TextDecoder(record.encoding).decode(record.data);
+            const [key, ...valueParts] = text.split(':');
+            if (key) {
+              nfcData[key] = valueParts.join(':');
+            }
+          }
+        }
+
+        if (!nfcData.storeName) {
+          toast.error('Invalid NFC data');
+          setShowScanner(false);
+          return;
+        }
+
+        setShowScanner(false);
+        router.push(`/payment?storeName=${nfcData.storeName}`);
+      });
+    } catch (err) {
+      toast('NFT Minting Failed!');
+    }
   };
 
   if (isLoading) return <p>Loading...</p>;
 
   return (
-    <div className="min-h-screen bg-white -z-20">
+    <div className="min-h-screen bg-white -z-20 my-auto">
       {/* Header */}
       <div className="top-0 sticky z-50 bg-[#FFFFFFB5] shadow-md border-b border-slate-200 backdrop-blur-sm">
         <div className="px-4 lg:px-8 py-5">
@@ -220,16 +233,16 @@ export default function DashboardPage() {
                 className="flex flex-col items-center h-fit p-4 border-slate-300 text-slate-700 hover:bg-slate-50 transition-all duration-200 "
                 onClick={() => handleScanMint()}
               >
-                <QrCode className="h-6 w-6 mb-2" />
+                <NfcIcon className="h-6 w-6 mb-2" />
                 <span className="text-sm font-medium">Mint Voucher</span>
               </Button>
 
               <Button
                 variant="outline"
                 className="flex flex-col items-center h-fit p-4 bg-black/90 hover:bg-black hover:text-white transition-all duration-200 text-white"
-                onClick={() => handleScanPay('payment')}
+                onClick={() => handleNFCScan()}
               >
-                <Camera className="h-8 w-8 mb-2" />
+                <Scan className="h-8 w-8 mb-2" />
                 <span className="text-sm font-medium">Scan to Pay</span>
               </Button>
             </div>
@@ -247,40 +260,40 @@ export default function DashboardPage() {
                 className="flex items-center gap-2 data-[state=active]:bg-black data-[state=active]:text-slate-100"
               >
                 <Ticket className="h-4 w-4" />
-                Active ({activeVouchers.length})
+                Active ({activeStamps.length})
               </TabsTrigger>
               <TabsTrigger
                 value="history"
                 className="flex items-center gap-2 data-[state=active]:bg-black data-[state=active]:text-slate-100"
               >
                 <History className="h-4 w-4" />
-                History ({historyVouchers.length})
+                History ({historyStamps.length})
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="active" className="space-y-4">
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-7 items-center justify-center">
-                {getFilteredVouchers(activeVouchers).length === 0 ? (
+                {getFilteredStamps(activeStamps).length === 0 ? (
                   <Card className="col-span-full border-slate-200">
                     <CardContent className="text-center py-12">
                       <Ticket className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                       <p className="text-slate-600 text-lg">
-                        No active vouchers found
+                        No active Stamps found
                       </p>
                       <p className="text-slate-500 text-sm">
-                        Try scanning a QR code or entering a promo code
+                        Try scanning an NFC to mint Stamp.
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
-                  getFilteredVouchers(activeVouchers).map((voucher) => (
+                  getFilteredStamps(activeStamps).map((stamp) => (
                     <VoucherStamp
-                      key={voucher.stampId}
-                      voucherType={voucher.storeName}
-                      priceOffer={voucher.discount}
-                      validUntil={voucher.validUntil}
-                      ipfs={voucher.ipfs}
-                      variant={voucher.variant}
+                      key={stamp.stampId}
+                      stampType={stamp.storeName}
+                      priceOffer={stamp.discount}
+                      validUntil={stamp.validUntil}
+                      ipfs={stamp.ipfs}
+                      variant={stamp.variant}
                     />
                   ))
                 )}
@@ -289,27 +302,27 @@ export default function DashboardPage() {
 
             <TabsContent value="history" className="space-y-4">
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-7 items-center justify-center">
-                {getFilteredVouchers(historyVouchers).length === 0 ? (
+                {getFilteredStamps(historyStamps).length === 0 ? (
                   <Card className="col-span-full border-slate-200">
                     <CardContent className="text-center py-12">
                       <History className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                       <p className="text-slate-600 text-lg">
-                        No voucher history
+                        No Stamps history
                       </p>
                       <p className="text-slate-500 text-sm">
-                        Used and expired vouchers will appear here
+                        Used and expired stamps will appear here
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
-                  getFilteredVouchers(historyVouchers).map((voucher) => (
+                  getFilteredStamps(historyStamps).map((stamp) => (
                     <VoucherStamp
-                      key={voucher.stampId}
-                      voucherType={voucher.storeName}
-                      priceOffer={voucher.discount}
-                      validUntil={voucher.validUntil}
-                      ipfs={voucher.ipfs}
-                      variant={voucher.variant}
+                      key={stamp.stampId}
+                      stampType={stamp.storeName}
+                      priceOffer={stamp.discount}
+                      validUntil={stamp.validUntil}
+                      ipfs={stamp.ipfs}
+                      variant={stamp.variant}
                     />
                   ))
                 )}
@@ -327,8 +340,8 @@ export default function DashboardPage() {
               Scan NFC to mint Stamps
             </DialogTitle>
           </DialogHeader>
-          <QRScan
-            onResult={handleScanPay}
+          <NFCScan
+            onResult={handleNFCScan}
             onClose={() => setShowScanner(false)}
           />
         </DialogContent>

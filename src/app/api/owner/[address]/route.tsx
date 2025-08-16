@@ -17,7 +17,9 @@ export async function GET(request: NextRequest, { params }: any) {
     if (searchParams.get('discountType'))
       filters.voucherType = searchParams.get('discountType');
 
-    const stamps = await Stamp.find(filters).sort({ createdAt: -1 }).lean();
+    const stamps = await Stamp.find({ ownerAddress: address })
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json(
       {

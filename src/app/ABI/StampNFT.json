@@ -306,9 +306,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
+        "internalType": "uint256[]",
+        "name": "tokenIds",
+        "type": "uint256[]"
       }
     ],
     "name": "burn",
@@ -378,6 +378,11 @@
         "internalType": "string",
         "name": "URI",
         "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOwner",
+        "type": "address"
       }
     ],
     "name": "mint",

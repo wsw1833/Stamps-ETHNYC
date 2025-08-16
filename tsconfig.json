@@ -28,7 +28,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/app/context"
+    "src/app/context",
+    "src/app/api/sponsor-gas"
   ],
   "exclude": ["node_modules"]
 }

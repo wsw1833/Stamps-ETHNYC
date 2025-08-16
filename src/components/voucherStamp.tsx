@@ -15,7 +15,7 @@ import Image from 'next/image';
 
 interface voucherStampProps {
   tokenId?: string;
-  voucherType?: string;
+  stampType?: string;
   priceOffer?: string;
   validUntil?: string;
   ipfs?: string;
@@ -33,7 +33,7 @@ interface voucherStampProps {
 }
 
 const VoucherStamp = ({
-  voucherType,
+  stampType,
   priceOffer,
   validUntil,
   ipfs,
@@ -55,7 +55,7 @@ const VoucherStamp = ({
 
   const ipfsHandler = () => {
     window.open(
-      `turquoise-perfect-caterpillar-941.mypinata.cloud/ipfs/${ipfs}`,
+      `https://turquoise-perfect-caterpillar-941.mypinata.cloud/ipfs/${ipfs}?pinataGatewayToken=Sh9J-JiQbZWerOkhChHyHCny459cNTsXwdWwYZ5XHcMfcRsguwUzGehzZ1tvZCPa`,
       '_blank'
     );
   };
@@ -107,7 +107,7 @@ const VoucherStamp = ({
       {/* Content */}
       <div className="relative h-full flex flex-col justify-center items-center p-4 sm:p-6 text-center space-y-2 sm:space-y-3">
         <h2 className="text-base sm:text-lg lg:text-xl font-bold tracking-wider font-sans uppercase leading-tight">
-          {voucherType}
+          {stampType}
         </h2>
 
         <div className="flex items-center justify-center">{getIcon()}</div>
@@ -125,7 +125,7 @@ const VoucherStamp = ({
         </div>
 
         <div className="text-sm sm:text-base lg:text-lg font-bold tracking-wide">
-          {validUntil}
+          {validUntil && new Date(validUntil).toLocaleDateString('en-CA')}
         </div>
 
         {/* IPFS Button */}

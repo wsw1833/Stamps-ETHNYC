@@ -15,18 +15,20 @@ contract StampNFT is ERC721, ERC721URIStorage, Ownable {
         _nextTokenId = 1;
     }
 
-    function mint(string memory URI) public returns (uint256) {
+    function mint(string memory URI, address tokenOwner) public onlyOwner returns (uint256) {
         uint256 tokenId = _nextTokenId++;
-        _safeMint(msg.sender, tokenId);
+        _safeMint(tokenOwner, tokenId);
         _setTokenURI(tokenId, URI);
         return tokenId;
     }
 
-    function burn(uint256 tokenId) public onlyOwner {
-        require(_ownerOf(tokenId) != address(0), "Token does not exist");
-        _burn(tokenId);
+   function burn(uint256[] memory tokenIds) public onlyOwner {
+      require(tokenIds.length > 0, "No token IDs provided");
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+        require(_ownerOf(tokenIds[i]) != address(0), "Token does not exist");
+        _burn(tokenIds[i]);
     }
-
+}
 
     function getNextTokenId() public view returns (uint256) {
         return _nextTokenId;

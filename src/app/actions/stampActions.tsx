@@ -99,8 +99,6 @@ export const changeStampStatus = async (
   stampIds: string | string[],
   newStatus: string
 ) => {
-  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000';
-
   try {
     const response = await fetch(`${baseUrl}/api/updateStatus`, {
       method: 'PUT',

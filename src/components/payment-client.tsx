@@ -22,9 +22,11 @@ import {
   Calculator,
   Plus,
 } from 'lucide-react';
-import { StampData } from '@/app/actions/stampActions';
-import PaymentVoucher from './paymentVoucher';
+import { changeStampStatus, StampData } from '@/app/actions/stampActions';
+import PaymentStamp from './paymentStamp';
 import { useStoreStamps } from '@/hooks/useStoreStamps';
+import { contractAddress } from '@/lib/constant';
+import { useStampNFT } from '@/hooks/useStampNFT';
 
 export default function PaymentClient() {
   const router = useRouter();
@@ -33,32 +35,45 @@ export default function PaymentClient() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [appliedStamps, setAppliedStamps] = useState<StampData[]>([]);
-
-  const restaurant = searchParams.get('restaurant') || 'Pizza Palace';
-  const { stamps } = useStoreStamps(restaurant);
+  const [isAutoApplyComplete, setIsAutoApplyComplete] = useState(false);
+  const storeName = searchParams.get('storeName') || 'ETHGlobal';
+  const { stamps } = useStoreStamps(storeName);
+  const { sponsoredBurn, isLoading: NFTMintLoading } = useStampNFT({
+    contractAddress,
+  });
 
   // Filter vouchers for this restaurant that are active and not expired
-  const availableStamps = stamps.filter((stamp) => {
-    // Create date objects for comparison
-    const expirationDate = new Date(stamp.validUntil);
-    const currentDate = new Date();
+  const getFilteredStamps = () => {
+    return stamps.filter((stamp) => {
+      const expirationDate = new Date(stamp.validUntil);
+      const currentDate = new Date();
 
-    // Set time to start of day for fair comparison
-    expirationDate.setHours(23, 59, 59, 999);
-    currentDate.setHours(0, 0, 0, 0);
+      expirationDate.setHours(23, 59, 59, 999);
+      currentDate.setHours(0, 0, 0, 0);
 
-    const isNotExpired = expirationDate >= currentDate;
-    const isForThisRestaurant =
-      stamp.storeName.toLowerCase().trim() === restaurant.toLowerCase().trim();
-    const isActive = stamp.status === 'active';
-    const isNotAlreadyApplied = !appliedStamps.find(
-      (as) => as.stampId === stamp.stampId
-    );
+      const isNotExpired = expirationDate >= currentDate;
+      const isForThisRestaurant =
+        stamp.storeName.toLowerCase().trim() === storeName.toLowerCase().trim();
+      const isActive = stamp.status === 'active';
 
-    return (
-      isNotExpired && isForThisRestaurant && isActive && isNotAlreadyApplied
-    );
-  });
+      return isNotExpired && isForThisRestaurant && isActive;
+    });
+  };
+
+  const filteredStamps = getFilteredStamps();
+
+  // Get available stamps (filtered stamps that are not currently applied)
+  const availableStamps = filteredStamps.filter(
+    (stamp) => !appliedStamps.find((as) => as.stampId === stamp.stampId)
+  );
+
+  // Auto-apply all filtered stamps when component loads
+  useEffect(() => {
+    if (filteredStamps.length > 0 && !isAutoApplyComplete) {
+      setAppliedStamps(filteredStamps);
+      setIsAutoApplyComplete(true);
+    }
+  }, [filteredStamps, isAutoApplyComplete]);
 
   // Mock order details
   const orderItems = [
@@ -95,20 +110,41 @@ export default function PaymentClient() {
     setAppliedStamps(appliedStamps.filter((v) => v.stampId !== stampId));
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     setIsProcessing(true);
 
-    // Simulate payment processing
-
-    //set payment here, change status of the stamps if payment success, redirect to success page with txhash.
-    setTimeout(() => {
-      setIsProcessing(false);
-      router.push(
-        `/success?total=${finalTotal.toFixed(
-          2
-        )}&discount=${totalDiscount.toFixed(2)}`
+    try {
+      // Simulate payment processing, if success then burn token.
+      // Extract all stamp IDs from applied stamps
+      const appliedStampIds = appliedStamps.map((stamp) =>
+        BigInt(stamp.stampId)
       );
-    }, 3000);
+
+      if (appliedStampIds.length > 0) {
+        const txResult = await sponsoredBurn(appliedStampIds);
+        console.log('Burn transaction result:', txResult);
+      }
+
+      // change status of the stamps if token burn success and redirect to success page.
+      const response = await changeStampStatus(
+        appliedStampIds.toString(),
+        'used'
+      );
+
+      if (response.success) {
+        setTimeout(() => {
+          setIsProcessing(false);
+          router.push(
+            `/success?total=${finalTotal.toFixed(
+              2
+            )}&discount=${totalDiscount.toFixed(2)}`
+          );
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Payment or burn failed:', error);
+      setIsProcessing(false);
+    }
   };
 
   const paymentMethods = [
@@ -162,21 +198,21 @@ export default function PaymentClient() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-slate-900">
                     <Store className="h-5 w-5" />
-                    Restaurant
+                    Store Name
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-lg text-slate-900">
-                        {restaurant}
+                        {storeName}
                       </p>
                       <p className="text-sm text-slate-600">
                         {availableStamps.length > 0
-                          ? `${availableStamps.length} voucher${
+                          ? `${availableStamps.length} stamps${
                               availableStamps.length !== 1 ? 's' : ''
-                            } available from your active vouchers`
-                          : 'No vouchers available for this restaurant'}
+                            } available from your active stamps`
+                          : 'No stamps available for this restaurant'}
                       </p>
                     </div>
                     <Badge
@@ -195,17 +231,17 @@ export default function PaymentClient() {
                   <CardTitle className="flex items-center justify-between text-slate-900">
                     <div className="flex items-center gap-2">
                       <Ticket className="h-5 w-5" />
-                      Your Active Vouchers ({appliedStamps.length} applied)
+                      Your Active stamps ({appliedStamps.length} applied)
                     </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {appliedStamps.length === 0 ? (
+                  {stamps.length === 0 ? (
                     <div className="text-center py-2">
                       {appliedStamps.length > 0 ? (
                         <>
                           <p className="text-slate-600 mb-6">
-                            No vouchers applied
+                            No stamps applied
                           </p>
                           <Button
                             variant="outline"
@@ -215,13 +251,13 @@ export default function PaymentClient() {
                             <Ticket className="h-4 w-4 md:block hidden" />
 
                             <span className="hidden sm:inline">
-                              Apply Your {restaurant} Vouchers (
+                              Apply Your {storeName} stamps (
                               {appliedStamps.length} available)
                             </span>
 
                             {/* Short Text on Small Screens */}
                             <span className="inline sm:hidden">
-                              {appliedStamps.length} Vouchers
+                              {appliedStamps.length} stamps
                             </span>
                           </Button>
                         </>
@@ -229,11 +265,11 @@ export default function PaymentClient() {
                         <div className="text-center">
                           <Ticket className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                           <p className="text-slate-600 text-lg mb-2">
-                            No vouchers available
+                            No stamps available
                           </p>
                           <p className="text-sm text-slate-500 mb-4">
-                            You don&apos;t have any active vouchers for{' '}
-                            {restaurant}
+                            You don&apos;t have any active stamps for{' '}
+                            {storeName}
                           </p>
                           <Button
                             variant="outline"
@@ -248,13 +284,12 @@ export default function PaymentClient() {
                   ) : (
                     <div className="space-y-3">
                       {appliedStamps.map((stamp, index) => (
-                        <PaymentVoucher
+                        <PaymentStamp
                           key={stamp.stampId}
-                          stampType={stamp.discountType}
-                          priceOffer={stamp.discountAmount.toString()}
+                          stampType={stamp.storeName}
+                          priceOffer={stamp.discount}
                           validUntil={stamp.validUntil}
                           ipfs={stamp.ipfs}
-                          status={stamp.status}
                           variant={stamp.variant}
                           applyStamp={() => handleRemoveVoucher(stamp.stampId)}
                         />
@@ -268,12 +303,12 @@ export default function PaymentClient() {
                         >
                           <Plus className="h-4 w-4 md:block hidden" />
                           <span className="hidden sm:inline">
-                            Apply Another Voucher ({availableStamps.length}{' '}
+                            Apply Another Stamp ({availableStamps.length}{' '}
                             remaining)
                           </span>
                           {/* Short Text on Small Screens */}
                           <span className="inline sm:hidden">
-                            {availableStamps.length} Vouchers
+                            {availableStamps.length} Stamps
                           </span>
                         </Button>
                       )}
@@ -355,7 +390,7 @@ export default function PaymentClient() {
                           );
                         })}
                         <div className="flex justify-between text-emerald-600 font-medium border-t border-emerald-200 pt-2">
-                          <span>Total Voucher Savings</span>
+                          <span>Total Stamps Savings</span>
                           <span>-${totalDiscount.toFixed(2)}</span>
                         </div>
                       </div>
@@ -447,7 +482,7 @@ export default function PaymentClient() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-slate-900 sm:text-lg text-base">
               <Ticket className="h-5 w-5" />
-              Your Active {restaurant} Vouchers ({availableStamps.length})
+              Your Active {storeName} Stamps ({availableStamps.length})
             </DialogTitle>
           </DialogHeader>
 
@@ -456,10 +491,10 @@ export default function PaymentClient() {
               <div className="text-center py-8">
                 <Ticket className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                 <p className="text-slate-600 text-lg mb-4">
-                  No {restaurant} vouchers available
+                  No {storeName} stamps available
                 </p>
                 <p className="text-slate-500 text-sm mb-4">
-                  You don&apos;t have any active vouchers for this restaurant
+                  You don&apos;t have any active stamps for this store.
                 </p>
                 <Button
                   variant="outline"
@@ -480,13 +515,12 @@ export default function PaymentClient() {
                     : stamp.discountAmount;
 
                 return (
-                  <PaymentVoucher
+                  <PaymentStamp
                     key={stamp.stampId}
                     stampType={stamp.storeName}
-                    priceOffer={stamp.discountAmount.toString()}
+                    priceOffer={stamp.discount}
                     validUntil={stamp.validUntil}
                     ipfs={stamp.ipfs}
-                    status={stamp.status}
                     variant={stamp.variant}
                     applyStamp={() => handleApplyVoucher(stamp)}
                   />
