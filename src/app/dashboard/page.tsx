@@ -17,7 +17,6 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer';
 import { Search, Scan, History, Ticket, NfcIcon } from 'lucide-react';
-import globe from '@/images/globe.svg';
 import Image from 'next/image';
 import VoucherStamp from '@/components/voucherStamp';
 import { useStamps } from '@/hooks/useStamps';
@@ -30,6 +29,8 @@ import { useStampNFT } from '@/hooks/useStampNFT';
 import { contractAddress } from '@/lib/constant';
 import Lottie from 'lottie-react';
 import nfcScanAnimation from '@/images/mobileNfc.json';
+import stampLoader from '@/images/stampLoader.json';
+import logo from '@/images/stamp-logo.svg';
 
 interface NfcData {
   [key: string]: string | undefined;
@@ -201,7 +202,9 @@ export default function DashboardPage() {
         setShowScanner(false);
         setIsScanning(false);
         router.push(
-          `/payment?storeName=${nfcData.storeName}&storeAddress=${nfcData.address}`
+          `/payment?storeName=${encodeURIComponent(
+            nfcData.storeName
+          )}&storeAddress=${nfcData.address}`
         );
         ndef.removeEventListener('reading');
       });
@@ -228,7 +231,20 @@ export default function DashboardPage() {
     setIsScanning(false);
   };
 
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading)
+    return (
+      <div className="flex flex-col w-full h-screen items-center justify-center ">
+        <div className="w-40 h-40 md:w-48 md:h-48 flex items-center justify-center">
+          <Lottie
+            animationData={stampLoader}
+            loop={true}
+            autoplay={true}
+            style={{ width: '80%', height: '80%' }}
+          />
+        </div>
+        <p className="font-bold text-lg">Loading...</p>
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-white -z-20 my-auto">
@@ -238,9 +254,9 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Image
-                src={globe}
+                src={logo}
                 alt="sponsors"
-                className="md:w-7 md:h-7 w-7 h-7"
+                className="md:w-10 md:h-10 w-8 h-8"
               />
               <h1 className="text-xl lg:text-2xl font-bold text-black md:block hidden">
                 Stamps

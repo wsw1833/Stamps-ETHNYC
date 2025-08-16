@@ -23,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className={`font-inter antialiased`}>
+        <link rel="icon" href="/stamp-logo.svg" sizes="32x32" />
         <WalletProvider>{children}</WalletProvider>
         <Toaster richColors />
       </body>

@@ -24,9 +24,13 @@ import {
   useChainId,
   useChains,
   useWaitForTransactionReceipt,
+  useWriteContract,
 } from 'wagmi';
 import Image from 'next/image';
 import flowIcon from '@/images/flow.svg';
+import { PYUSDAddress } from '@/lib/constant';
+import paypal from '@/images/paypal.png';
+import PYUSD_ABI from '../app/ABI/PYUSD.json';
 
 export default function PaymentClient() {
   const router = useRouter();
@@ -45,7 +49,16 @@ export default function PaymentClient() {
     searchParams.get('storeAddress') ||
     '0x3bBdBF48f5ff97A9C967B48d8512870612419f77';
 
+  const {
+    writeContractAsync,
+    data: sepoliahTxHash,
+    isPending: isSepoliaPending,
+    isSuccess: isSepoliaSuccess,
+    error: sepoliaError,
+  } = useWriteContract();
+
   const { stamps } = useStoreStamps(storeName);
+
   const {
     sendTransaction,
     data: paymentTxHash,
@@ -60,6 +73,14 @@ export default function PaymentClient() {
     error: confirmationError,
   } = useWaitForTransactionReceipt({
     hash: paymentTxHash,
+  });
+
+  const {
+    isLoading: isContractConfirming,
+    isSuccess: isContractConfirmed,
+    error: contractConfirmationError,
+  } = useWaitForTransactionReceipt({
+    hash: sepoliahTxHash,
   });
 
   const { sponsoredBurn, isLoading: NFTMintLoading } = useStampNFT({
@@ -105,7 +126,14 @@ export default function PaymentClient() {
   // Handle the sequential flow after payment confirmation
   useEffect(() => {
     const processBurnAndRedirect = async () => {
-      if (!isPaymentConfirmed || !paymentTxHash || paymentStep !== 'payment')
+      const isTransactionConfirmed = isPaymentConfirmed || isContractConfirmed;
+      const transactionHash = paymentTxHash || sepoliahTxHash;
+
+      if (
+        !isTransactionConfirmed ||
+        !transactionHash ||
+        paymentStep !== 'payment'
+      )
         return;
 
       try {
@@ -139,9 +167,9 @@ export default function PaymentClient() {
                   2
                 )}&discount=${totalDiscount.toFixed(
                   2
-                )}&txHash=${paymentTxHash}&chain=${
+                )}&txHash=${transactionHash}&chain=${
                   currentChain?.name || 'Unknown'
-                }&storeName=${storeName}`
+                }&storeName=${encodeURIComponent(storeName)}`
               );
             }, 2000);
           }
@@ -156,9 +184,9 @@ export default function PaymentClient() {
                 2
               )}&discount=${totalDiscount.toFixed(
                 2
-              )}&txHash=${paymentTxHash}&chain=${
+              )}&txHash=${transactionHash}&chain=${
                 currentChain?.name || 'Unknown'
-              }&storeName=${storeName}`
+              }&storeName=${encodeURIComponent(storeName)}`
             );
           }, 2000);
         }
@@ -172,7 +200,9 @@ export default function PaymentClient() {
     processBurnAndRedirect();
   }, [
     isPaymentConfirmed,
+    isContractConfirmed,
     paymentTxHash,
+    sepoliahTxHash,
     paymentStep,
     appliedStamps,
     sponsoredBurn,
@@ -183,20 +213,75 @@ export default function PaymentClient() {
 
   // Handle payment errors
   useEffect(() => {
-    if (paymentError || confirmationError) {
-      console.error('Payment error:', paymentError || confirmationError);
+    if (
+      paymentError ||
+      confirmationError ||
+      sepoliaError ||
+      contractConfirmationError
+    ) {
+      console.error(
+        'Payment error:',
+        paymentError ||
+          confirmationError ||
+          sepoliaError ||
+          contractConfirmationError
+      );
       setIsProcessing(false);
       setPaymentStep('idle');
     }
-  }, [paymentError, confirmationError]);
+  }, [
+    paymentError,
+    confirmationError,
+    sepoliaError,
+    contractConfirmationError,
+  ]);
 
   // Mock order details
-  const orderItems = [
-    { name: 'Margherita Pizza', price: 18.99, quantity: 1 },
-    { name: 'Caesar Salad', price: 12.99, quantity: 1 },
-    { name: 'Garlic Bread', price: 6.99, quantity: 2 },
-    { name: 'Soft Drink', price: 3.99, quantity: 2 },
-  ];
+  const getOrderItemsForVariant = (variant: string) => {
+    if (variant === 'taxi') {
+      return [
+        { name: 'Standard Ride (5 miles)', price: 18.5, quantity: 1 },
+        { name: 'Airport Surcharge', price: 4.5, quantity: 1 },
+        { name: 'Tip', price: 3.0, quantity: 1 },
+      ];
+    } else if (variant === 'subway') {
+      return [
+        { name: 'MetroCard Refill', price: 33.0, quantity: 1 },
+        { name: 'Express Service Fee', price: 2.75, quantity: 1 },
+      ];
+    } else if (variant === 'manhattan') {
+      return [
+        { name: 'Broadway Show Tickets', price: 65.99, quantity: 2 },
+        { name: 'Museum Entry Pass', price: 25.0, quantity: 2 },
+        { name: 'Tourist Guide Map', price: 5.99, quantity: 1 },
+      ];
+    } else if (variant === 'hotel') {
+      return [
+        { name: 'Deluxe Room (2 nights)', price: 159.99, quantity: 1 },
+        { name: 'Resort Fee', price: 25.0, quantity: 2 },
+        { name: 'Parking', price: 12.0, quantity: 2 },
+        { name: 'Mini Bar', price: 10.99, quantity: 1 },
+      ];
+    } else if (variant === 'coffee') {
+      return [
+        { name: 'Espresso Grande', price: 4.99, quantity: 2 },
+        { name: 'Croissant', price: 3.49, quantity: 1 },
+        { name: 'Oat Milk Upgrade', price: 0.65, quantity: 2 },
+        { name: 'Extra Shot', price: 0.75, quantity: 1 },
+      ];
+    } else {
+      // Default items (same as your original pizza order)
+      return [
+        { name: 'Margherita Pizza', price: 18.99, quantity: 1 },
+        { name: 'Caesar Salad', price: 12.99, quantity: 1 },
+        { name: 'Garlic Bread', price: 6.99, quantity: 2 },
+        { name: 'Soft Drink', price: 3.99, quantity: 2 },
+      ];
+    }
+  };
+
+  const currentVariant = appliedStamps[0]?.variant ?? 'default';
+  const orderItems = getOrderItemsForVariant(currentVariant);
 
   const subtotal = orderItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -230,16 +315,32 @@ export default function PaymentClient() {
 
     setIsProcessing(true);
     setPaymentStep('payment');
+    //PYUSD and Native flow payment here.
+    const currentChain = chains.find((c) => c.id === chainId);
 
     try {
-      console.log('Initiating payment transaction...');
-      await sendTransaction({
-        to: storeAddress as `0x${string}`,
-        value: parseEther(finalTotal.toString()),
-      });
+      if (currentChain?.id === 11155111) {
+        // Sepolia → send PYUSD
+        await writeContractAsync({
+          address: PYUSDAddress as `0x${string}`,
+          abi: PYUSD_ABI,
+          functionName: 'transfer',
+          args: [
+            storeAddress,
+            parseInt((finalTotal * 1000000).toString()), // 6 decimals for PYUSD
+          ],
+        });
+      } else if (currentChain?.id === 545) {
+        // Flow EVM testnet → send native
+        await sendTransaction({
+          to: storeAddress as `0x${string}`,
+          value: parseEther(finalTotal.toString()),
+        });
+      } else {
+        throw new Error(`Unsupported chain: ${currentChain?.name}`);
+      }
     } catch (error) {
-      console.error('Payment transaction failed:', error);
-      setIsProcessing(false);
+      console.error('Payment failed:', error);
       setPaymentStep('idle');
     }
   };
@@ -248,17 +349,17 @@ export default function PaymentClient() {
   const getStatusMessage = () => {
     switch (paymentStep) {
       case 'payment':
-        if (isPaymentPending) return 'Confirming payment transaction...';
-        if (isPaymentConfirming) return 'Waiting for payment confirmation...';
+        if (isPaymentPending || isSepoliaPending)
+          return 'Confirming payment transaction...';
+        if (isPaymentConfirming || isContractConfirming)
+          return 'Waiting for payment confirmation...';
         return 'Processing payment...';
       case 'burn':
         return 'Processing stamp redemption...';
       case 'complete':
         return 'Redirecting to success page...';
       default:
-        return isProcessing
-          ? 'Processing...'
-          : `Pay $${finalTotal.toFixed(2)} FLOW`;
+        return isProcessing ? 'Processing...' : `Pay $${finalTotal.toFixed(2)}`;
     }
   };
 
@@ -268,6 +369,12 @@ export default function PaymentClient() {
       name: 'FLOW EVM Testnet',
       icon: flowIcon,
       description: 'Pay with $FLOW',
+    },
+    {
+      id: 'paypal',
+      name: 'PAYPAL USD',
+      icon: paypal,
+      description: 'Pay with $PYUSD',
     },
   ];
 
@@ -443,7 +550,7 @@ export default function PaymentClient() {
                         </p>
                       </div>
                       <p className="font-semibold text-slate-900">
-                        {`$${(item.price * item.quantity).toFixed(2)} FLOW`}
+                        {`$${(item.price * item.quantity).toFixed(2)}`}
                       </p>
                     </div>
                   ))}
@@ -463,15 +570,15 @@ export default function PaymentClient() {
                 <CardContent className="space-y-3">
                   <div className="flex justify-between text-slate-900">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)} FLOW</span>
+                    <span>${subtotal.toFixed(2)} </span>
                   </div>
                   <div className="flex justify-between text-slate-900">
                     <span>Delivery Fee</span>
-                    <span>${deliveryFee.toFixed(2)} FLOW</span>
+                    <span>${deliveryFee.toFixed(2)} </span>
                   </div>
                   <div className="flex justify-between text-slate-900">
                     <span>Tax (8%)</span>
-                    <span>${tax.toFixed(2)} FLOW</span>
+                    <span>${tax.toFixed(2)} </span>
                   </div>
                   {totalDiscount > 0 && (
                     <>
@@ -488,13 +595,13 @@ export default function PaymentClient() {
                               className="flex justify-between text-emerald-600 text-sm"
                             >
                               <span>{stamp.discountType} Discount</span>
-                              <span>-${voucherDiscount.toFixed(2)} FLOW</span>
+                              <span>-${voucherDiscount.toFixed(2)} </span>
                             </div>
                           );
                         })}
                         <div className="flex justify-between text-emerald-600 font-medium border-t border-emerald-200 pt-2">
                           <span>Total Stamps Savings</span>
-                          <span>-${totalDiscount.toFixed(2)} FLOW</span>
+                          <span>-${totalDiscount.toFixed(2)} </span>
                         </div>
                       </div>
                     </>
@@ -502,7 +609,7 @@ export default function PaymentClient() {
                   <Separator className="bg-slate-200" />
                   <div className="flex justify-between font-bold text-lg text-slate-900">
                     <span>Total</span>
-                    <span>${finalTotal.toFixed(2)} FLOW</span>
+                    <span>${finalTotal.toFixed(2)} </span>
                   </div>
                   {totalDiscount > 0 && (
                     <div className="text-center">
@@ -608,7 +715,7 @@ export default function PaymentClient() {
               <Button
                 onClick={handlePayment}
                 disabled={isProcessing}
-                className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-900 hover:to-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-6 text-lg font-semibold bg-black/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? (
                   <div className="flex items-center gap-3">
@@ -616,7 +723,7 @@ export default function PaymentClient() {
                     {getStatusMessage()}
                   </div>
                 ) : (
-                  `Pay $${finalTotal.toFixed(2)} FLOW`
+                  `Pay $${finalTotal.toFixed(2)}`
                 )}
               </Button>
             </div>

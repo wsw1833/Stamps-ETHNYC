@@ -31,15 +31,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if stamp with same ID already exists
-    const existingStamp = await Stamp.findOne({ stampId: body.stampId });
-    if (existingStamp) {
-      return NextResponse.json(
-        { success: false, error: 'Stamp with this ID already exists' },
-        { status: 409 }
-      );
-    }
-
     // Check if transaction hash already exists
     const existingTx = await Stamp.findOne({ txHash: body.txHash });
     if (existingTx) {

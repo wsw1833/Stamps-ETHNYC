@@ -13,6 +13,8 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { useAccount } from 'wagmi';
 import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect';
 import { heroWords } from '@/lib/constant';
+import logo from '@/images/stamp-logo.svg';
+import stamps from '@/images/stamps.png';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,9 +29,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-8">
-      <div className="flex flex-col gap-3 items-center justify-center">
-        <Image src={globe} alt="sponsors" className="md:w-10 md:h-10 w-8 h-8" />
-        <h1 className="font-inter md:text-5xl text-4xl font-bold">Stamps</h1>
+      <div className="flex flex-col gap-1 items-center justify-center">
+        <Image src={logo} alt="sponsors" className="w-20 h-20" />
+        <Image src={stamps} alt="stamps" className="w-44" />
       </div>
       <div>
         <TypewriterEffectSmooth

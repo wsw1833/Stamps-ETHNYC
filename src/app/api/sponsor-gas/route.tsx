@@ -3,13 +3,15 @@ import { Address } from 'viem';
 import { ethers } from 'ethers';
 
 const FLOW_EVM_TESTNET_RPC = 'https://testnet.evm.nodes.onflow.org';
+const SEPOLIA_RPC = `https://sepolia.infura.io/v3/30b7c6dd689b4100923e3d562ae7b084`;
 const SPONSOR_PRIVATE_KEY = process.env.AGENT_PRIVATE_KEY;
 
 if (!SPONSOR_PRIVATE_KEY) {
   throw new Error('AGENT_PRIVATE_KEY environment variable is required');
 }
 
-const provider = new ethers.JsonRpcProvider(FLOW_EVM_TESTNET_RPC);
+//change sepolia <-> flow rpc;
+const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
 const sponsorWallet = new ethers.Wallet(SPONSOR_PRIVATE_KEY, provider);
 
 interface SponsorTransactionRequest {
