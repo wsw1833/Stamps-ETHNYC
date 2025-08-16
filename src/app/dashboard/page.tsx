@@ -18,17 +18,20 @@ import globe from '@/images/globe.svg';
 import Image from 'next/image';
 import VoucherStamp from '@/components/voucherStamp';
 import { mockVouchers } from '@/lib/constant';
+import { useStamps } from '@/hooks/useStamps';
+import { mintStamp } from '../actions/stampActions';
 
-export interface Voucher {
+export interface Stamp {
   tokenid: string;
+  ownerAddress?: string;
   restaurantName: string;
   discount: string;
-  validUntil: string;
-  status: 'active' | 'expired' | 'used';
-  ipfsLink: string;
-  description: string;
   discountType: string;
   discountAmount: number;
+  validUntil: string;
+  status: 'active' | 'expired' | 'used';
+  ipfs: string;
+  description: string;
   variant?:
     | 'taxi'
     | 'subway'
@@ -41,7 +44,9 @@ export interface Voucher {
 }
 
 export default function DashboardPage() {
-  const [vouchers, setVouchers] = useState<Voucher[]>(mockVouchers);
+  //fetch acc address;
+  const { stamps, isLoading, refetch } = useStamps(''); //adress here.
+  const [vouchers, setVouchers] = useState<Stamp[]>(mockVouchers);
   const [searchQuery, setSearchQuery] = useState('');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [scanType, setScanType] = useState<'voucher' | 'payment'>('voucher');
@@ -56,7 +61,7 @@ export default function DashboardPage() {
     (v) => v.status === 'expired' || v.status === 'used'
   );
 
-  const getFilteredVouchers = (voucherList: Voucher[]) => {
+  const getFilteredVouchers = (voucherList: Stamp[]) => {
     return voucherList.filter(
       (voucher) =>
         voucher.restaurantName
@@ -66,23 +71,24 @@ export default function DashboardPage() {
     );
   };
 
-  const handleQRScan = (type: 'voucher' | 'payment') => {
-    setScanType(type);
+  const handleScanMint = async () => {
     setShowQRScanner(true);
+    //nfc-scan and mint here.
+    const data = stamps[0];
+    const result = await mintStamp(data);
+    // refetch stamps here.
   };
 
-  const handleQRResult = (result: string) => {
+  const handleScanPay = (result: string) => {
     setShowQRScanner(false);
-    if (scanType === 'payment') {
-      router.push(`/payment?restaurant=${result}`);
-    } else {
-      console.log('Voucher QR scanned:', result);
-    }
+    router.push(`/payment?restaurant=${result}`);
   };
 
   const handleLogout = () => {
     router.push('/');
   };
+
+  if (isLoading) return <p>Loading...</p>;
 
   return (
     <div className="min-h-screen bg-white">
@@ -134,7 +140,7 @@ export default function DashboardPage() {
               <Button
                 variant="outline"
                 className="flex flex-col items-center h-fit p-4 border-slate-300 text-slate-700 hover:bg-slate-50 transition-all duration-200 "
-                onClick={() => handleQRScan('voucher')}
+                onClick={() => handleScanMint()}
               >
                 <QrCode className="h-6 w-6 mb-2" />
                 <span className="text-sm font-medium">Mint Voucher</span>
@@ -143,7 +149,7 @@ export default function DashboardPage() {
               <Button
                 variant="outline"
                 className="flex flex-col items-center h-fit p-4 bg-black/90 hover:bg-black hover:text-white transition-all duration-200 text-white"
-                onClick={() => handleQRScan('payment')}
+                onClick={() => handleScanPay('payment')}
               >
                 <Camera className="h-8 w-8 mb-2" />
                 <span className="text-sm font-medium">Scan to Pay</span>
@@ -195,7 +201,7 @@ export default function DashboardPage() {
                       voucherType={voucher.restaurantName}
                       priceOffer={voucher.discount}
                       validUntil={voucher.validUntil}
-                      ipfs={voucher.ipfsLink}
+                      ipfs={voucher.ipfs}
                       status={voucher.status}
                       variant={voucher.variant}
                     />
@@ -225,7 +231,7 @@ export default function DashboardPage() {
                       voucherType={voucher.restaurantName}
                       priceOffer={voucher.discount}
                       validUntil={voucher.validUntil}
-                      ipfs={voucher.ipfsLink}
+                      ipfs={voucher.ipfs}
                       status={voucher.status}
                       variant={voucher.variant}
                     />
@@ -248,7 +254,7 @@ export default function DashboardPage() {
             </DialogTitle>
           </DialogHeader>
           <QRScan
-            onResult={handleQRResult}
+            onResult={handleScanPay}
             onClose={() => setShowQRScanner(false)}
             scanType={scanType}
           />

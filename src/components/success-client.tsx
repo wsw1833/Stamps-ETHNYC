@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Home, Receipt, Download, Share } from 'lucide-react';
+import { CheckCircle, Home, Download } from 'lucide-react';
 
 export default function SuccessClient() {
   const router = useRouter();
@@ -44,7 +44,7 @@ export default function SuccessClient() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Transaction ID</span>
+                  <span className="text-slate-600">Transaction Hash</span>
                   <span className="font-mono text-sm text-slate-900">
                     #TXN123456789
                   </span>

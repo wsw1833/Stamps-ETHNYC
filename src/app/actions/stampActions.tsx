@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 
 export interface StampData {
   ownerAddress: string;
+  restaurantName: string;
   stampId: string;
   txHash: string;
   ipfs: string;
@@ -12,6 +13,15 @@ export interface StampData {
   validUntil: string;
   status?: string;
   createdAt?: string;
+  variant?:
+    | 'taxi'
+    | 'subway'
+    | 'manhattan'
+    | 'coffee'
+    | 'restaurant'
+    | 'bar'
+    | 'hotel'
+    | 'luxury';
 }
 
 interface ApiResponse {

@@ -53,6 +53,10 @@ const StampSchema = new Schema(
       enum: ['active', 'used', 'expired'],
       default: 'active',
     },
+    variant: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true, // This adds createdAt and updatedAt automatically

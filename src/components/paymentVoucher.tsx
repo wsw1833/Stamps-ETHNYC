@@ -15,13 +15,13 @@ import walrus from '@/images/walrus.png';
 
 interface voucherStampProps {
   tokenId?: string;
-  voucherType?: string;
+  stampType?: string;
   priceOffer?: string;
   validUntil?: string;
   ipfs?: string;
   status?: string;
   className?: string;
-  applyVoucher?: () => void;
+  applyStamp?: () => void;
   variant?:
     | 'taxi'
     | 'subway'
@@ -34,14 +34,14 @@ interface voucherStampProps {
 }
 
 const PaymentVoucher = ({
-  voucherType = 'NYC METRO VOUCHER',
+  stampType = 'NYC METRO VOUCHER',
   priceOffer = '50% OFF',
   validUntil = 'DEC 31, 2024',
   ipfs,
   status,
   className,
   variant = 'subway',
-  applyVoucher,
+  applyStamp,
 }: voucherStampProps) => {
   const variants = {
     taxi: 'bg-nyc-taxi text-nyc-black border-nyc-black',
@@ -93,7 +93,7 @@ const PaymentVoucher = ({
         variants[variant],
         className
       )}
-      onClick={applyVoucher}
+      onClick={applyStamp}
     >
       {/* Corner squares - responsive sizing */}
       <div className="absolute top-1 left-1 sm:top-2 sm:left-2 w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 border-2 border-current"></div>
@@ -113,7 +113,7 @@ const PaymentVoucher = ({
             {getIcon()}
           </div>
           <h2 className="text-xs sm:text-sm md:text-sm font-bold tracking-wider font-sans uppercase leading-tight px-1">
-            {voucherType}
+            {stampType}
           </h2>
         </div>
 

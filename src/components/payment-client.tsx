@@ -23,9 +23,10 @@ import {
   Plus,
   X,
 } from 'lucide-react';
-import { Voucher } from '@/app/dashboard/page';
+import { StampData } from '@/app/actions/stampActions';
 import { mockVouchers } from '@/lib/constant';
 import PaymentVoucher from './paymentVoucher';
+import { useStoreStamps } from '@/hooks/useStoreStamps';
 
 export default function PaymentClient() {
   const router = useRouter();
@@ -33,15 +34,15 @@ export default function PaymentClient() {
   const [selectedPayment, setSelectedPayment] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
-  const [appliedVouchers, setAppliedVouchers] = useState<Voucher[]>([]);
+  const [appliedStamps, setAppliedStamps] = useState<StampData[]>([]);
 
   const restaurant = searchParams.get('restaurant') || 'Pizza Palace';
-  const preSelectedVoucherId = searchParams.get('voucher');
+  const { stamps } = useStoreStamps(restaurant);
 
   // Filter vouchers for this restaurant that are active and not expired
-  const availableVouchers = mockVouchers.filter((voucher) => {
+  const availableStamps = stamps.filter((stamp) => {
     // Create date objects for comparison
-    const expirationDate = new Date(voucher.validUntil);
+    const expirationDate = new Date(stamp.validUntil);
     const currentDate = new Date();
 
     // Set time to start of day for fair comparison
@@ -50,33 +51,17 @@ export default function PaymentClient() {
 
     const isNotExpired = expirationDate >= currentDate;
     const isForThisRestaurant =
-      voucher.restaurantName.toLowerCase().trim() ===
+      stamp.restaurantName.toLowerCase().trim() ===
       restaurant.toLowerCase().trim();
-    const isActive = voucher.status === 'active';
-    const isNotAlreadyApplied = !appliedVouchers.find(
-      (av) => av.tokenid === voucher.tokenid
+    const isActive = stamp.status === 'active';
+    const isNotAlreadyApplied = !appliedStamps.find(
+      (as) => as.stampId === stamp.stampId
     );
 
     return (
       isNotExpired && isForThisRestaurant && isActive && isNotAlreadyApplied
     );
   });
-
-  // Apply pre-selected voucher on load
-  useEffect(() => {
-    if (preSelectedVoucherId) {
-      const preSelectedVoucher = mockVouchers.find(
-        (v) => v.tokenid === preSelectedVoucherId
-      );
-      if (
-        preSelectedVoucher &&
-        preSelectedVoucher.restaurantName.toLowerCase().trim() ===
-          restaurant.toLowerCase().trim()
-      ) {
-        setAppliedVouchers([preSelectedVoucher]);
-      }
-    }
-  }, [preSelectedVoucherId, restaurant]);
 
   // Mock order details
   const orderItems = [
@@ -94,29 +79,31 @@ export default function PaymentClient() {
   const deliveryFee = 3.99;
 
   // Calculate total discount from all applied vouchers
-  const totalDiscount = appliedVouchers.reduce((total, voucher) => {
-    if (voucher.discountType === 'percentage') {
-      return total + subtotal * (voucher.discountAmount / 100);
+  const totalDiscount = appliedStamps.reduce((total, stamp) => {
+    if (stamp.voucherType === 'percentage') {
+      return total + subtotal * (stamp.voucherAmount / 100);
     } else {
-      return total + voucher.discountAmount;
+      return total + stamp.voucherAmount;
     }
   }, 0);
 
   const finalTotal = Math.max(0, subtotal + tax + deliveryFee - totalDiscount);
 
-  const handleApplyVoucher = (voucher: Voucher) => {
-    setAppliedVouchers([...appliedVouchers, voucher]);
+  const handleApplyVoucher = (stamp: StampData) => {
+    setAppliedStamps([...appliedStamps, stamp]);
     setShowVoucherModal(false);
   };
 
-  const handleRemoveVoucher = (voucherId: string) => {
-    setAppliedVouchers(appliedVouchers.filter((v) => v.tokenid !== voucherId));
+  const handleRemoveVoucher = (stampId: string) => {
+    setAppliedStamps(appliedStamps.filter((v) => v.stampId !== stampId));
   };
 
   const handlePayment = () => {
     setIsProcessing(true);
 
     // Simulate payment processing
+
+    //set payment here, change status of the stamps if payment success, redirect to success page with txhash.
     setTimeout(() => {
       setIsProcessing(false);
       router.push(
@@ -188,9 +175,9 @@ export default function PaymentClient() {
                         {restaurant}
                       </p>
                       <p className="text-sm text-slate-600">
-                        {availableVouchers.length > 0
-                          ? `${availableVouchers.length} voucher${
-                              availableVouchers.length !== 1 ? 's' : ''
+                        {availableStamps.length > 0
+                          ? `${availableStamps.length} voucher${
+                              availableStamps.length !== 1 ? 's' : ''
                             } available from your active vouchers`
                           : 'No vouchers available for this restaurant'}
                       </p>
@@ -211,14 +198,14 @@ export default function PaymentClient() {
                   <CardTitle className="flex items-center justify-between text-slate-900">
                     <div className="flex items-center gap-2">
                       <Ticket className="h-5 w-5" />
-                      Your Active Vouchers ({appliedVouchers.length} applied)
+                      Your Active Vouchers ({appliedStamps.length} applied)
                     </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {appliedVouchers.length === 0 ? (
+                  {appliedStamps.length === 0 ? (
                     <div className="text-center py-2">
-                      {availableVouchers.length > 0 ? (
+                      {appliedStamps.length > 0 ? (
                         <>
                           <p className="text-slate-600 mb-6">
                             No vouchers applied
@@ -232,12 +219,12 @@ export default function PaymentClient() {
 
                             <span className="hidden sm:inline">
                               Apply Your {restaurant} Vouchers (
-                              {availableVouchers.length} available)
+                              {appliedStamps.length} available)
                             </span>
 
                             {/* Short Text on Small Screens */}
                             <span className="inline sm:hidden">
-                              {availableVouchers.length} Vouchers
+                              {appliedStamps.length} Vouchers
                             </span>
                           </Button>
                         </>
@@ -263,21 +250,19 @@ export default function PaymentClient() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {appliedVouchers.map((voucher, index) => (
+                      {appliedStamps.map((stamp, index) => (
                         <PaymentVoucher
-                          key={voucher.tokenid}
-                          voucherType={voucher.restaurantName}
-                          priceOffer={voucher.discount}
-                          validUntil={voucher.validUntil}
-                          ipfs={voucher.ipfsLink}
-                          status={voucher.status}
-                          variant={voucher.variant}
-                          applyVoucher={() =>
-                            handleRemoveVoucher(voucher.tokenid)
-                          }
+                          key={stamp.stampId}
+                          stampType={stamp.restaurantName}
+                          priceOffer={stamp.voucherAmount.toString()}
+                          validUntil={stamp.validUntil}
+                          ipfs={stamp.ipfs}
+                          status={stamp.status}
+                          variant={stamp.variant}
+                          applyStamp={() => handleRemoveVoucher(stamp.stampId)}
                         />
                       ))}
-                      {availableVouchers.length > 0 && (
+                      {availableStamps.length > 0 && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -286,12 +271,12 @@ export default function PaymentClient() {
                         >
                           <Plus className="h-4 w-4 md:block hidden" />
                           <span className="hidden sm:inline">
-                            Apply Another Voucher ({availableVouchers.length}{' '}
+                            Apply Another Voucher ({availableStamps.length}{' '}
                             remaining)
                           </span>
                           {/* Short Text on Small Screens */}
                           <span className="inline sm:hidden">
-                            {availableVouchers.length} Vouchers
+                            {availableStamps.length} Vouchers
                           </span>
                         </Button>
                       )}
@@ -357,17 +342,17 @@ export default function PaymentClient() {
                     <>
                       <Separator className="bg-slate-200" />
                       <div className="space-y-2">
-                        {appliedVouchers.map((voucher, index) => {
+                        {appliedStamps.map((stamp, index) => {
                           const voucherDiscount =
-                            voucher.discountType === 'percentage'
-                              ? subtotal * (voucher.discountAmount / 100)
-                              : voucher.discountAmount;
+                            stamp.voucherType === 'percentage'
+                              ? subtotal * (stamp.voucherAmount / 100)
+                              : stamp.voucherAmount;
                           return (
                             <div
-                              key={voucher.tokenid}
+                              key={stamp.stampId}
                               className="flex justify-between text-emerald-600 text-sm"
                             >
-                              <span>{voucher.discount} Discount</span>
+                              <span>{stamp.voucherType} Discount</span>
                               <span>-${voucherDiscount.toFixed(2)}</span>
                             </div>
                           );
@@ -465,12 +450,12 @@ export default function PaymentClient() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-slate-900 sm:text-lg text-base">
               <Ticket className="h-5 w-5" />
-              Your Active {restaurant} Vouchers ({availableVouchers.length})
+              Your Active {restaurant} Vouchers ({availableStamps.length})
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
-            {availableVouchers.length === 0 ? (
+            {availableStamps.length === 0 ? (
               <div className="text-center py-8">
                 <Ticket className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                 <p className="text-slate-600 text-lg mb-4">
@@ -491,22 +476,22 @@ export default function PaymentClient() {
                 </Button>
               </div>
             ) : (
-              availableVouchers.map((voucher) => {
+              availableStamps.map((stamp) => {
                 const potentialSavings =
-                  voucher.discountType === 'percentage'
-                    ? subtotal * (voucher.discountAmount / 100)
-                    : voucher.discountAmount;
+                  stamp.voucherType === 'percentage'
+                    ? subtotal * (stamp.voucherAmount / 100)
+                    : stamp.voucherAmount;
 
                 return (
                   <PaymentVoucher
-                    key={voucher.tokenid}
-                    voucherType={voucher.restaurantName}
-                    priceOffer={voucher.discount}
-                    validUntil={voucher.validUntil}
-                    ipfs={voucher.ipfsLink}
-                    status={voucher.status}
-                    variant={voucher.variant}
-                    applyVoucher={() => handleApplyVoucher(voucher)}
+                    key={stamp.stampId}
+                    stampType={stamp.restaurantName}
+                    priceOffer={stamp.voucherAmount.toString()}
+                    validUntil={stamp.validUntil}
+                    ipfs={stamp.ipfs}
+                    status={stamp.status}
+                    variant={stamp.variant}
+                    applyStamp={() => handleApplyVoucher(stamp)}
                   />
                 );
               })
