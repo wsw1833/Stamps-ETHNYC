@@ -1,5 +1,8 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @custom-variant dark (&:is(.dark *));
 
@@ -41,6 +44,24 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* NYC-themed colors */
+  --color-nyc-taxi: hsl(45 95% 58%);
+  --color-nyc-subway: hsl(220 85% 35%);
+  --color-nyc-concrete: hsl(210 8% 45%);
+  --color-nyc-park: hsl(150 55% 35%);
+  --color-nyc-manhattan: hsl(25 100% 55%);
+  --color-nyc-white: hsl(0 0% 98%);
+  --color-nyc-black: hsl(210 15% 12%);
+  --color-nyc-blue-light: hsl(220 75% 65%);
+
+  /* Food & Beverage colors */
+  --color-food-coffee: hsl(25 75% 35%);
+  --color-food-pizza: hsl(15 85% 55%);
+  --color-food-wine: hsl(345 75% 45%);
+
+  /* Hotel colors */
+  --color-hotel-luxury: hsl(280 40% 25%);
+  --color-hotel-gold: hsl(45 85% 55%);
 }
 
 :root {

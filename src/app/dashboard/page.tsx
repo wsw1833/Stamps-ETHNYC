@@ -12,164 +12,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Search,
-  QrCode,
-  Gift,
-  Camera,
-  LogOut,
-  History,
-  Ticket,
-} from 'lucide-react';
-import { VoucherCard } from '@/components/voucher-card';
+import { Search, QrCode, Camera, LogOut, History, Ticket } from 'lucide-react';
 import { QRScan } from '@/components/qr-scan';
+import globe from '@/images/globe.svg';
+import Image from 'next/image';
+import VoucherStamp from '@/components/voucherStamp';
+import { mockVouchers } from '@/lib/constant';
 
-interface Voucher {
-  id: string;
+export interface Voucher {
+  tokenid: string;
   restaurantName: string;
   discount: string;
-  expirationDate: string;
+  validUntil: string;
   status: 'active' | 'expired' | 'used';
   ipfsLink: string;
   description: string;
-  originalPrice?: number;
-  discountAmount?: number;
+  discountType: string;
+  discountAmount: number;
+  variant?:
+    | 'taxi'
+    | 'subway'
+    | 'manhattan'
+    | 'coffee'
+    | 'restaurant'
+    | 'bar'
+    | 'hotel'
+    | 'luxury';
 }
-
-const mockVouchers: Voucher[] = [
-  {
-    id: '1',
-    restaurantName: 'Pizza Palace',
-    discount: '20% OFF',
-    expirationDate: '2024-12-31',
-    status: 'active',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample1',
-    description: 'Valid for all menu items',
-    originalPrice: 25.99,
-    discountAmount: 5.2,
-  },
-  {
-    id: '2',
-    restaurantName: 'Burger Barn',
-    discount: '$5 OFF',
-    expirationDate: '2024-11-15',
-    status: 'active',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample2',
-    description: 'Minimum order $25',
-    originalPrice: 30.0,
-    discountAmount: 5.0,
-  },
-  {
-    id: '3',
-    restaurantName: 'Pizza Palace',
-    discount: '$10 OFF',
-    expirationDate: '2024-12-20',
-    status: 'active',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample3',
-    description: 'Minimum order $30',
-    originalPrice: 30.0,
-    discountAmount: 10.0,
-  },
-  {
-    id: '4',
-    restaurantName: 'Sushi Spot',
-    discount: 'Buy 1 Get 1',
-    expirationDate: '2024-10-30',
-    status: 'expired',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample4',
-    description: 'Valid for sushi rolls only',
-    originalPrice: 18.99,
-    discountAmount: 18.99,
-  },
-  {
-    id: '5',
-    restaurantName: 'Taco Town',
-    discount: '15% OFF',
-    expirationDate: '2024-12-25',
-    status: 'used',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample5',
-    description: 'Valid Tuesday-Thursday',
-    originalPrice: 22.5,
-    discountAmount: 3.38,
-  },
-  {
-    id: '6',
-    restaurantName: 'Coffee Corner',
-    discount: '$3 OFF',
-    expirationDate: '2024-12-20',
-    status: 'active',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample6',
-    description: 'Valid for beverages only',
-    originalPrice: 12.99,
-    discountAmount: 3.0,
-  },
-  {
-    id: '7',
-    restaurantName: 'Pizza Palace',
-    discount: '25% OFF',
-    expirationDate: '2024-10-15',
-    status: 'expired',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample7',
-    description: 'Halloween special - expired',
-    originalPrice: 40.0,
-    discountAmount: 10.0,
-  },
-  {
-    id: '8',
-    restaurantName: 'Burger Barn',
-    discount: '$8 OFF',
-    expirationDate: '2024-11-30',
-    status: 'used',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample8',
-    description: 'Black Friday deal - already used',
-    originalPrice: 35.0,
-    discountAmount: 8.0,
-  },
-  {
-    id: '9',
-    restaurantName: 'Steakhouse NYC',
-    discount: '30% OFF',
-    expirationDate: '2024-09-15',
-    status: 'expired',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample9',
-    description: 'Summer special - expired',
-    originalPrice: 60.0,
-    discountAmount: 18.0,
-  },
-  {
-    id: '10',
-    restaurantName: 'Brooklyn Deli',
-    discount: '$12 OFF',
-    expirationDate: '2024-11-20',
-    status: 'used',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample10',
-    description: 'Thanksgiving special - used',
-    originalPrice: 45.0,
-    discountAmount: 12.0,
-  },
-  {
-    id: '11',
-    restaurantName: 'Pizza Palace',
-    discount: '15% OFF',
-    expirationDate: '2024-12-25',
-    status: 'active',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample11',
-    description: 'Valid for pizzas only',
-    originalPrice: 22.0,
-    discountAmount: 3.3,
-  },
-  {
-    id: '12',
-    restaurantName: 'Pizza Palace',
-    discount: '$7 OFF',
-    expirationDate: '2024-12-18',
-    status: 'active',
-    ipfsLink: 'https://ipfs.io/ipfs/QmExample12',
-    description: 'Weekend special',
-    originalPrice: 25.0,
-    discountAmount: 7.0,
-  },
-];
 
 export default function DashboardPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>(mockVouchers);
@@ -205,7 +74,7 @@ export default function DashboardPage() {
   const handleQRResult = (result: string) => {
     setShowQRScanner(false);
     if (scanType === 'payment') {
-      router.push(`/payment?restaurant=${encodeURIComponent(result)}`);
+      router.push(`/payment?restaurant=${result}`);
     } else {
       console.log('Voucher QR scanned:', result);
     }
@@ -216,27 +85,35 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-slate-900 shadow-lg border-b border-slate-800">
-        <div className="px-4 lg:px-8 py-4">
+      <div className="top-0 sticky z-50 bg-[#FFFFFFB5] shadow-md border-b border-slate-200 backdrop-blur-sm">
+        <div className="px-4 lg:px-8 py-5">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl lg:text-2xl font-bold text-slate-100">
-              My Vouchers
-            </h1>
+            <div className="flex items-center gap-2">
+              <Image
+                src={globe}
+                alt="sponsors"
+                className="md:w-7 md:h-7 w-7 h-7"
+              />
+              <h1 className="text-xl lg:text-2xl font-bold text-black">
+                Stamps
+              </h1>
+            </div>
             <Button
-              variant="ghost"
+              variant="default"
               size="sm"
               onClick={handleLogout}
-              className="text-slate-300 hover:text-slate-100 hover:bg-slate-800"
+              className="text-white bg-black/90 hover:bg-black text-md flex"
             >
-              <LogOut className="h-4 w-4" />
+              Logout
+              <LogOut className="w-5 h-5" />
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="px-4 lg:px-8 py-6">
+      <div className="px-4 lg:px-8 py-6 bg-slate-50">
         <div className="max-w-4xl mx-auto">
           {/* Search Bar */}
           <div className="mb-6">
@@ -246,7 +123,7 @@ export default function DashboardPage() {
                 placeholder="Search restaurants or vouchers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 border-slate-300 focus:border-slate-500 focus:ring-slate-500"
+                className="pl-10 h-12 border-slate-300"
               />
             </div>
           </div>
@@ -256,24 +133,20 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 max-w-lg mx-auto">
               <Button
                 variant="outline"
-                className="flex flex-col items-center py-6 h-auto bg-gradient-to-br from-slate-50 to-slate-100 border-slate-300 hover:from-slate-100 hover:to-slate-200 transition-all duration-200"
+                className="flex flex-col items-center h-fit p-4 border-slate-300 text-slate-700 hover:bg-slate-50 transition-all duration-200 "
                 onClick={() => handleQRScan('voucher')}
               >
-                <QrCode className="h-6 w-6 mb-2 text-slate-700" />
-                <span className="text-sm font-medium text-slate-800">
-                  Scan Voucher
-                </span>
+                <QrCode className="h-6 w-6 mb-2" />
+                <span className="text-sm font-medium">Mint Voucher</span>
               </Button>
 
               <Button
                 variant="outline"
-                className="flex flex-col items-center py-6 h-auto bg-gradient-to-br from-slate-700 to-slate-800 border-slate-600 hover:from-slate-800 hover:to-slate-900 transition-all duration-200 text-white"
+                className="flex flex-col items-center h-fit p-4 bg-black/90 hover:bg-black hover:text-white transition-all duration-200 text-white"
                 onClick={() => handleQRScan('payment')}
               >
-                <Camera className="h-6 w-6 mb-2 text-slate-200" />
-                <span className="text-sm font-medium text-slate-200">
-                  Scan to Pay
-                </span>
+                <Camera className="h-8 w-8 mb-2" />
+                <span className="text-sm font-medium">Scan to Pay</span>
               </Button>
             </div>
           </div>
@@ -282,19 +155,19 @@ export default function DashboardPage() {
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="w-full"
+            className="w-full flex items-center"
           >
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100 border border-slate-300">
               <TabsTrigger
                 value="active"
-                className="flex items-center gap-2 data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100"
+                className="flex items-center gap-2 data-[state=active]:bg-black data-[state=active]:text-slate-100"
               >
                 <Ticket className="h-4 w-4" />
                 Active ({activeVouchers.length})
               </TabsTrigger>
               <TabsTrigger
                 value="history"
-                className="flex items-center gap-2 data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100"
+                className="flex items-center gap-2 data-[state=active]:bg-black data-[state=active]:text-slate-100"
               >
                 <History className="h-4 w-4" />
                 History ({historyVouchers.length})
@@ -302,7 +175,7 @@ export default function DashboardPage() {
             </TabsList>
 
             <TabsContent value="active" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-7 items-center justify-center">
                 {getFilteredVouchers(activeVouchers).length === 0 ? (
                   <Card className="col-span-full border-slate-200">
                     <CardContent className="text-center py-12">
@@ -317,12 +190,14 @@ export default function DashboardPage() {
                   </Card>
                 ) : (
                   getFilteredVouchers(activeVouchers).map((voucher) => (
-                    <VoucherCard
-                      key={voucher.id}
-                      voucher={voucher}
-                      onApply={(voucherId) => {
-                        router.push(`/payment?voucher=${voucherId}`);
-                      }}
+                    <VoucherStamp
+                      key={voucher.tokenid}
+                      voucherType={voucher.restaurantName}
+                      priceOffer={voucher.discount}
+                      validUntil={voucher.validUntil}
+                      ipfs={voucher.ipfsLink}
+                      status={voucher.status}
+                      variant={voucher.variant}
                     />
                   ))
                 )}
@@ -330,7 +205,7 @@ export default function DashboardPage() {
             </TabsContent>
 
             <TabsContent value="history" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-7 items-center justify-center">
                 {getFilteredVouchers(historyVouchers).length === 0 ? (
                   <Card className="col-span-full border-slate-200">
                     <CardContent className="text-center py-12">
@@ -345,11 +220,14 @@ export default function DashboardPage() {
                   </Card>
                 ) : (
                   getFilteredVouchers(historyVouchers).map((voucher) => (
-                    <VoucherCard
-                      key={voucher.id}
-                      voucher={voucher}
-                      onApply={() => {}}
-                      isHistory={true}
+                    <VoucherStamp
+                      key={voucher.tokenid}
+                      voucherType={voucher.restaurantName}
+                      priceOffer={voucher.discount}
+                      validUntil={voucher.validUntil}
+                      ipfs={voucher.ipfsLink}
+                      status={voucher.status}
+                      variant={voucher.variant}
                     />
                   ))
                 )}
