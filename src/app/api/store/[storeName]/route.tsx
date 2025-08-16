@@ -9,7 +9,7 @@ export async function GET(
   try {
     await connectDB();
 
-    const { storeName } = params;
+    const { storeName } = await params;
     const { searchParams } = new URL(request.url);
 
     // Build filters from query parameters
@@ -30,7 +30,7 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error in GET /api/stamps/store/[storeName]:', error);
+    console.error('Error in GET /api/store/[storeName]:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

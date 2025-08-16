@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     const requiredFields = [
       'ownerAddress',
-      'tokenId',
+      'stampId',
       'txHash',
       'ipfs',
       'storeName',
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const newStamp = new Stamp({
       id: body.id,
       ownerAddress: body.ownerAddress,
-      tokenId: body.tokenId,
+      stampId: body.stampId,
       txHash: body.txHash,
       ipfs: body.ipfs,
       storeName: body.storeName,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error in POST /api/stamps/mint:', error);
+    console.error('Error in POST /api/mint:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

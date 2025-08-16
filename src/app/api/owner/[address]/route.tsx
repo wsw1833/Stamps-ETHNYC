@@ -9,7 +9,7 @@ export async function GET(
   try {
     await connectDB();
 
-    const { address } = params;
+    const { address } = await params;
     const { searchParams } = new URL(request.url);
 
     // Build filters from query parameters
@@ -31,7 +31,7 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error in GET /api/stamps/owner/[address]:', error);
+    console.error('Error in GET /api/owner/[address]:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

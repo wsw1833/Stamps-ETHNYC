@@ -1,9 +1,7 @@
 'use server';
-import { Stamp } from '@/models/schema';
 import { revalidatePath } from 'next/cache';
 
-interface StampData {
-  id: string;
+export interface StampData {
   ownerAddress: string;
   stampId: string;
   txHash: string;
@@ -28,7 +26,7 @@ const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000';
 
 export const mintStamp = async (stampData: StampData) => {
   try {
-    const response = await fetch(`${baseUrl}/api/stamps/mint`, {
+    const response = await fetch(`${baseUrl}/api/mint`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(stampData),
@@ -68,7 +66,7 @@ export const getStampsByOwnerAddress = async (
     if (filters?.voucherType) params.append('voucherType', filters.voucherType);
 
     const queryString = params.toString();
-    const url = `${baseUrl}/api/stamps/owner/${ownerAddress}${
+    const url = `${baseUrl}/api/owner/${ownerAddress}${
       queryString ? `?${queryString}` : ''
     }`;
 
@@ -146,7 +144,7 @@ export const getStampsFilteredByStoreName = async (
     if (filters?.voucherType) params.append('voucherType', filters.voucherType);
 
     const queryString = params.toString();
-    const url = `${baseUrl}/api/stamps/store/${storeName}${
+    const url = `${baseUrl}/api/store/${storeName}${
       queryString ? `?${queryString}` : ''
     }`;
 
@@ -177,7 +175,7 @@ export const getStampsFilteredByStoreName = async (
 // Get single stamp by ID
 export const getStampById = async (stampId: string) => {
   try {
-    const response = await fetch(`${baseUrl}/api/stamps/${stampId}`, {
+    const response = await fetch(`${baseUrl}/api/${stampId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });

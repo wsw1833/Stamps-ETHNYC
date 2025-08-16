@@ -60,6 +60,6 @@ const StampSchema = new Schema(
   }
 );
 
-const Stamp = mongoose.model('Stamp', StampSchema);
+const Stamp = mongoose.models.Stamp || mongoose.model('Stamps', StampSchema);
 
 export { Stamp };

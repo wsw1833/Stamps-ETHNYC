@@ -74,7 +74,7 @@ export async function PUT(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error in PUT /api/stamps/status/batch:', error);
+    console.error('Error in PUT /api/updateStatus', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

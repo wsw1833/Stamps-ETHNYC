@@ -8,7 +8,7 @@ export async function GET(
   try {
     await connectDB();
 
-    const { stampId } = params;
+    const { stampId } = await params;
 
     const stamp = await Stamp.findOne({ stampId }).lean();
 
@@ -27,7 +27,7 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error in GET /api/stamps/[id]:', error);
+    console.error('Error in GET /api/[stampId]:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
