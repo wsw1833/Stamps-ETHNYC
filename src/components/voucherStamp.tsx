@@ -11,7 +11,7 @@ import {
   FileText,
   Globe,
 } from 'lucide-react';
-import walrus from '@/images/walrus.png';
+import pinata from '@/images/pinata.svg';
 import Image from 'next/image';
 
 interface voucherStampProps {
@@ -87,7 +87,7 @@ const VoucherStamp = ({
       className={cn(
         'relative inline-block w-full aspect-[4/5] border-4 border-solid',
         'shadow-2xl transform transition-all duration-300 hover:scale-105 hover:rotate-2',
-        'min-h-[280px] max-w-[320px] mx-auto',
+        'min-h-[280px] max-w-[320px] mx-auto ',
         'sm:min-h-[300px] lg:min-h-[320px]',
         variants[variant],
         className
@@ -104,7 +104,7 @@ const VoucherStamp = ({
       <div className="absolute inset-6 sm:inset-8 border border-current opacity-10"></div>
 
       {/* Content */}
-      <div className="relative z-10 h-full flex flex-col justify-center items-center p-4 sm:p-6 text-center space-y-2 sm:space-y-3">
+      <div className="relative h-full flex flex-col justify-center items-center p-4 sm:p-6 text-center space-y-2 sm:space-y-3">
         <h2 className="text-base sm:text-lg lg:text-xl font-bold tracking-wider font-sans uppercase leading-tight">
           {voucherType}
         </h2>
@@ -133,9 +133,9 @@ const VoucherStamp = ({
           className="mt-3 p-1.5 bg-current/10 border border-current rounded-full hover:bg-current/70 transition-colors duration-200 flex items-center"
         >
           <Image
-            src={walrus}
-            alt="walrus"
-            className="sm:w-8 sm:h-8 w-6 h-6 rounded-full"
+            src={pinata}
+            alt="pinata"
+            className="sm:w-7 sm:h-7 w-6 h-6 rounded-full"
           />
         </button>
 

@@ -1,50 +1,64 @@
 'use client';
 
-import type React from 'react';
-
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import globe from '@/images/globe.svg';
+import zircuit from '@/images/zircuit.svg';
+import dynamicLogo from '@/images/dynamic-primary.svg';
+import flow from '@/images/flow.svg';
 import Image from 'next/image';
+import dynamic from '@/images/dynamic.svg';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { useAccount } from 'wagmi';
+import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect';
+import { heroWords } from '@/lib/constant';
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { isConnected, isConnecting } = useAccount();
+  const { setShowAuthFlow, showAuthFlow } = useDynamicContext();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
+  useEffect(() => {
+    if (isConnected) {
       router.push('/dashboard');
-    }, 1500);
-  };
+    }
+  }, [isConnected, router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-10">
-      <h1 className="font-inter md:text-4xl text-3xl font-bold">Stamps</h1>
-      <span className="md:text-3xl text-2xl font-semibold line-clamp-2 text-center">
-        Smart Loyalty Vouchers — Instant, Secure, On-Chain
-      </span>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 space-y-8">
+      <h1 className="font-inter md:text-5xl text-4xl font-bold">Stamps</h1>
+      <div>
+        <TypewriterEffectSmooth
+          words={heroWords}
+          className="mb-4 md:text-4xl text-2xl"
+        />
+      </div>
       <div className="md:text-2xl text-xl font-medium line-clamp-2 text-center flex flex-row gap-3">
         Power By
-        <Image src={globe} alt="sponsors" className="md:w-8 md:h-8 w-7 h-7" />
-        <Image src={globe} alt="sponsors" className="md:w-8 md:h-8 w-7 h-7" />
-        <Image src={globe} alt="sponsors" className="md:w-8 md:h-8 w-7 h-7" />
+        <Image src={flow} alt="sponsors" className="md:w-8 md:h-8 w-7 h-7" />
+        <Image
+          src={dynamicLogo}
+          alt="sponsors"
+          className="md:w-8 md:h-8 w-7 h-7"
+        />
+        <Image src={zircuit} alt="sponsors" className="md:w-8 md:h-8 w-7 h-7" />
       </div>
-      <Card className="w-full max-w-md">
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Connecting Wallet...' : 'Connect Wallet'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <Button
+        type="submit"
+        className="w-fit p-4"
+        disabled={showAuthFlow}
+        onClick={() => setShowAuthFlow(true)}
+      >
+        {showAuthFlow && isConnecting
+          ? 'Connecting Wallet...'
+          : 'Connect with Dynamic'}
+        <Image
+          src={dynamic}
+          alt="dynamic wallet"
+          className="md:w-5 md:h-5 w-4 h-4"
+        />
+      </Button>
     </div>
   );
 }

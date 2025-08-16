@@ -146,3 +146,19 @@ export const mockVouchers: Stamp[] = [
     variant: 'restaurant',
   },
 ];
+
+export const heroWords = [
+  {
+    text: 'One',
+  },
+  {
+    text: 'Tap,',
+  },
+  {
+    text: 'One',
+  },
+  {
+    text: 'Stamp.',
+    className: 'text-blue-500 dark:text-blue-500',
+  },
+];

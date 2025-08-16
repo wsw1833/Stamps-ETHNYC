@@ -20,7 +20,7 @@ import VoucherStamp from '@/components/voucherStamp';
 import { mockVouchers } from '@/lib/constant';
 import { useStamps } from '@/hooks/useStamps';
 import { mintStamp } from '../actions/stampActions';
-
+import { useDynamicContext, DynamicWidget } from '@dynamic-labs/sdk-react-core';
 export interface Stamp {
   tokenid: string;
   ownerAddress?: string;
@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [scanType, setScanType] = useState<'voucher' | 'payment'>('voucher');
   const [activeTab, setActiveTab] = useState('active');
+  const { user } = useDynamicContext();
   const router = useRouter();
 
   // Active tab: Only vouchers with status "active"
@@ -84,14 +85,10 @@ export default function DashboardPage() {
     router.push(`/payment?restaurant=${result}`);
   };
 
-  const handleLogout = () => {
-    router.push('/');
-  };
-
   if (isLoading) return <p>Loading...</p>;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white -z-20">
       {/* Header */}
       <div className="top-0 sticky z-50 bg-[#FFFFFFB5] shadow-md border-b border-slate-200 backdrop-blur-sm">
         <div className="px-4 lg:px-8 py-5">
@@ -102,19 +99,11 @@ export default function DashboardPage() {
                 alt="sponsors"
                 className="md:w-7 md:h-7 w-7 h-7"
               />
-              <h1 className="text-xl lg:text-2xl font-bold text-black">
+              <h1 className="text-xl lg:text-2xl font-bold text-black md:block hidden">
                 Stamps
               </h1>
             </div>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleLogout}
-              className="text-white bg-black/90 hover:bg-black text-md flex"
-            >
-              Logout
-              <LogOut className="w-5 h-5" />
-            </Button>
+            {user && <DynamicWidget variant="modal" buttonClassName="w-20" />}
           </div>
         </div>
       </div>
@@ -161,7 +150,7 @@ export default function DashboardPage() {
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="w-full flex items-center"
+            className="w-full flex items-center "
           >
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100 border border-slate-300">
               <TabsTrigger
