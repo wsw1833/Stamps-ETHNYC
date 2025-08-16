@@ -13,6 +13,8 @@ export default function SuccessClient() {
 
   const total = searchParams.get('total') || '36.79';
   const discount = searchParams.get('discount') || '0.00';
+  const txHash = searchParams.get('txHash') || '0x123....56789';
+  const currentChain = searchParams.get('chain') || 'FLOW EVM Testnet';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
@@ -46,7 +48,7 @@ export default function SuccessClient() {
                 <div className="flex justify-between">
                   <span className="text-slate-600">Transaction Hash</span>
                   <span className="font-mono text-sm text-slate-900">
-                    #TXN123456789
+                    {`${txHash}`}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -57,9 +59,7 @@ export default function SuccessClient() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Payment Method</span>
-                  <span className="text-sm text-slate-900">
-                    Credit Card ****1234
-                  </span>
+                  <span className="text-sm text-slate-900">{currentChain}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Status</span>

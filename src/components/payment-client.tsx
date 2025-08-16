@@ -12,36 +12,36 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  ArrowLeft,
-  CreditCard,
-  Wallet,
-  Smartphone,
-  Store,
-  Ticket,
-  Calculator,
-  Plus,
-} from 'lucide-react';
+import { ArrowLeft, Store, Ticket, Calculator, Plus } from 'lucide-react';
 import { changeStampStatus, StampData } from '@/app/actions/stampActions';
 import PaymentStamp from './paymentStamp';
 import { useStoreStamps } from '@/hooks/useStoreStamps';
 import { contractAddress } from '@/lib/constant';
 import { useStampNFT } from '@/hooks/useStampNFT';
+import { parseEther } from 'viem';
+import { useSendTransaction, useChainId, useChains } from 'wagmi';
+import Image from 'next/image';
+import flowIcon from '@/images/flow.svg';
 
 export default function PaymentClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedPayment, setSelectedPayment] = useState('card');
+  const [selectedPayment, setSelectedPayment] = useState('flow');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [appliedStamps, setAppliedStamps] = useState<StampData[]>([]);
   const [isAutoApplyComplete, setIsAutoApplyComplete] = useState(false);
   const storeName = searchParams.get('storeName') || 'ETHGlobal';
+  const storeAddress =
+    searchParams.get('storeAddress') ||
+    '0x3bBdBF48f5ff97A9C967B48d8512870612419f77';
   const { stamps } = useStoreStamps(storeName);
+  const { data, sendTransaction } = useSendTransaction();
   const { sponsoredBurn, isLoading: NFTMintLoading } = useStampNFT({
     contractAddress,
   });
-
+  const chainId = useChainId();
+  const chains = useChains();
   // Filter vouchers for this restaurant that are active and not expired
   const getFilteredStamps = () => {
     return stamps.filter((stamp) => {
@@ -115,6 +115,12 @@ export default function PaymentClient() {
 
     try {
       // Simulate payment processing, if success then burn token.
+      const currentChain = chains.find((c) => c.id === chainId);
+      sendTransaction({
+        to: storeAddress as `0x${string}`, // receiver
+        value: parseEther(finalTotal.toString()), // amount (in ETH/FLOW EVM)
+      });
+
       // Extract all stamp IDs from applied stamps
       const appliedStampIds = appliedStamps.map((stamp) =>
         BigInt(stamp.stampId)
@@ -137,7 +143,9 @@ export default function PaymentClient() {
           router.push(
             `/success?total=${finalTotal.toFixed(
               2
-            )}&discount=${totalDiscount.toFixed(2)}`
+            )}&discount=${totalDiscount.toFixed(2)}&txHash=${data}&chain=${
+              currentChain?.name || 'Unknown'
+            }`
           );
         }, 3000);
       }
@@ -149,22 +157,10 @@ export default function PaymentClient() {
 
   const paymentMethods = [
     {
-      id: 'card',
-      name: 'Credit/Debit Card',
-      icon: CreditCard,
-      description: 'Visa, Mastercard, Amex',
-    },
-    {
-      id: 'wallet',
-      name: 'Digital Wallet',
-      icon: Wallet,
-      description: 'Apple Pay, Google Pay',
-    },
-    {
-      id: 'mobile',
-      name: 'Mobile Payment',
-      icon: Smartphone,
-      description: 'PayPal, Venmo',
+      id: 'flow',
+      name: 'FLOW EVM Testnet',
+      icon: flowIcon,
+      description: 'Pay with $FLOW',
     },
   ];
 
@@ -425,7 +421,6 @@ export default function PaymentClient() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {paymentMethods.map((method) => {
-                    const Icon = method.icon;
                     return (
                       <div
                         key={method.id}
@@ -436,7 +431,11 @@ export default function PaymentClient() {
                         }`}
                         onClick={() => setSelectedPayment(method.id)}
                       >
-                        <Icon className="h-6 w-6 text-slate-600" />
+                        <Image
+                          src={method.icon}
+                          alt="flow"
+                          className="h-6 w-6"
+                        />
                         <div className="flex-1">
                           <p className="font-medium text-slate-900">
                             {method.name}

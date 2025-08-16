@@ -30,6 +30,7 @@ interface NfcData {
   [key: string]: string | undefined;
   ipfs?: string;
   storeName?: string;
+  address?: string;
 }
 
 export default function DashboardPage() {
@@ -173,14 +174,16 @@ export default function DashboardPage() {
           }
         }
 
-        if (!nfcData.storeName) {
+        if (!nfcData.storeName || !nfcData.address) {
           toast.error('Invalid NFC data');
           setShowScanner(false);
           return;
         }
 
         setShowScanner(false);
-        router.push(`/payment?storeName=${nfcData.storeName}`);
+        router.push(
+          `/payment?storeName=${nfcData.storeName}&storeAddress=${nfcData.address}`
+        );
       });
     } catch (err) {
       toast('NFT Minting Failed!');
