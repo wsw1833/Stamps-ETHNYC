@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎟️ Stamps
 
-## Getting Started
+Tap NFC to mint voucher NFTs, store on IPFS, and redeem discounts seamlessly.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Stamps is a decentralized application (dApp) that transforms how people collect, manage, and redeem vouchers. By combining **NFC technology, NFTs, and gas station sponsorship**, Stamps makes vouchers secure, eco-friendly, and easy to use across industries.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📌 Problem Statement
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Traditional paper vouchers and coupons often create friction:
 
-## Learn More
+- They get lost, forgotten, or expire before being used.
+- Businesses struggle with fraud, duplication, and manual tracking.
+- The paper-based system creates unnecessary waste and inefficiency.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Imagine you receive a paper coffee voucher after your morning purchase. The next time you visit, you’ve misplaced it — or worse, it expired without you noticing. The café loses a customer perk, and you lose the benefit. Multiply this problem across industries, and the system becomes unreliable and wasteful.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🎯 Goals & Solutions
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Goal:** Modernize voucher collection and redemption.  
+  **Solution:** Mint vouchers as **ERC-721 NFTs** stored in wallets with metadata on **IPFS**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Goal:** Make vouchers instantly accessible and verifiable.  
+  **Solution:** **Tap NFC tags** to instantly mint NFTs linked to the user’s wallet.
+
+- **Goal:** Enable seamless checkout with flexible payments.  
+  **Solution:** **Paywave with NFC** supporting **native Flow tokens** or **PayPal USD (PYUSD)**.
+
+- **Goal:** Remove friction from blockchain transactions.  
+  **Solution:** Use a **gas station / paymaster system** to sponsor gas fees for users.
+
+- **Goal:** Provide businesses with reliable, trackable discounts.  
+  **Solution:** Securely record voucher ownership and redemption on-chain.
+
+---
+
+## 🛠 Tech Stack
+
+- **Smart Contracts:** ERC-721 NFTs on **Flow EVM Testnet**
+- **Wallet Onboarding:** **Dynamic Wallets** for frictionless sign-up and account creation
+- **Frontend:** **Next.js** + **React** for responsive and interactive UI
+- **Backend:** **Node.js** + **MongoDB** for APIs and data management
+- **Wallet Integration:** **Wagmi** + **Ethers.js** for blockchain interactions
+- **Decentralized Storage:** **Pinata IPFS** for storing voucher metadata
+- **Payments:** Support for **native Flow tokens** and **PayPal USD (PYUSD)**
+- **NFC Integration:** Tap-to-mint vouchers and Paywave-style redemption
+- **Gas Sponsorship:** **Signed messages / paymaster system** to cover transaction fees
+
+---
+
+## Contract address
+
+- **FLOW EVM Testnet** 0x7B47D6fd0AA7a9dD800f523465a247Dc586345F9
+- **PYUSD Testnet** 0xE3D52C205F14Ba8A3e7c1C6EDBEEB4CE6dfc83C8
+
+---
